@@ -1,0 +1,310 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "about.credits" : {
+      "comment" : "About panel credits",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "A macOS clipboard history manager. Unrelated to the iOS text-cleaning app of the same name." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "macOS 剪贴板历史工具。与同名 iOS 文本清理应用无关。" } }
+      }
+    },
+    "hotkey.key.space" : {
+      "comment" : "Hotkey display name for Space",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Space" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "空格" } }
+      }
+    },
+    "hotkey.key.unknown" : {
+      "comment" : "Fallback hotkey key name",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Key" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "按键" } }
+      }
+    },
+    "menu.about" : {
+      "comment" : "Status menu About",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "About NeatPaste" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "关于 NeatPaste" } }
+      }
+    },
+    "menu.launchAtLogin" : {
+      "comment" : "Status menu launch at login",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开机自启动" } }
+      }
+    },
+    "menu.openPanel" : {
+      "comment" : "Status menu open panel",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open Panel" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开面板" } }
+      }
+    },
+    "menu.quit" : {
+      "comment" : "Status menu quit",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Quit NeatPaste" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "退出 NeatPaste" } }
+      }
+    },
+    "menu.settings" : {
+      "comment" : "Status menu settings",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置…" } }
+      }
+    },
+    "panel.accessibility.body" : {
+      "comment" : "How to grant Accessibility",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "To paste automatically, allow NeatPaste in System Settings → Privacy & Security → Accessibility. You can still press ⌘V yourself." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "要自动粘贴，请在「系统设置 › 隐私与安全性 › 辅助功能」中允许 NeatPaste。你仍然可以自己按 ⌘V。" } }
+      }
+    },
+    "panel.accessibility.openSettings" : {
+      "comment" : "Open Accessibility settings button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open System Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开系统设置" } }
+      }
+    },
+    "panel.accessibility.title" : {
+      "comment" : "Accessibility prompt title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Automatic paste needs permission" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "自动粘贴需要授权" } }
+      }
+    },
+    "panel.copiedOnly" : {
+      "comment" : "Copied to clipboard without auto-paste",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The item was copied to the clipboard." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "条目已写入系统剪贴板。" } }
+      }
+    },
+    "panel.image.placeholder" : {
+      "comment" : "Accessibility label for image placeholder",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "图片" } }
+      }
+    },
+    "panel.preview.empty" : {
+      "comment" : "Empty preview pane",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select an item to preview" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选中一条即可预览" } }
+      }
+    },
+    "panel.search.placeholder" : {
+      "comment" : "Search field placeholder",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Search" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "搜索" } }
+      }
+    },
+    "settings.hotkey.clear" : {
+      "comment" : "Clear hotkey button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "清除快捷键" } }
+      }
+    },
+    "settings.hotkey.cleared" : {
+      "comment" : "Hotkey cleared state",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Cleared" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "已清除" } }
+      }
+    },
+    "settings.hotkey.current" : {
+      "comment" : "Current hotkey accessibility label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Current global shortcut" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "当前全局唤起快捷键" } }
+      }
+    },
+    "settings.hotkey.hint" : {
+      "comment" : "Hotkey idle hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "You can change this anytime. Common macOS shortcuts are reserved." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "可随时修改；不会占用 macOS 的常用组合。" } }
+      }
+    },
+    "settings.hotkey.initFailed" : {
+      "comment" : "Hotkey handler init failed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The global shortcut could not start. Please relaunch NeatPaste." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全局快捷键无法初始化，请重新启动 NeatPaste。" } }
+      }
+    },
+    "settings.hotkey.needModifier" : {
+      "comment" : "Hotkey requires a modifier",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Hold Command, Option, Control, or Shift as well." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请同时按住 Command、Option、Control 或 Shift。" } }
+      }
+    },
+    "settings.hotkey.record" : {
+      "comment" : "Record hotkey button",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Record Shortcut" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "录制新快捷键" } }
+      }
+    },
+    "settings.hotkey.recording" : {
+      "comment" : "Recording hotkey button title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Recording…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "正在录制…" } }
+      }
+    },
+    "settings.hotkey.recordingHint" : {
+      "comment" : "Recording hint",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Press the new shortcut now. Press Escape to cancel." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "现在按下新的组合键；按 Escape 取消。" } }
+      }
+    },
+    "settings.hotkey.reserved" : {
+      "comment" : "System reserved shortcut",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This combination is reserved by macOS. Choose another." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这个组合由 macOS 保留，请换一个组合。" } }
+      }
+    },
+    "settings.hotkey.restore" : {
+      "comment" : "Restore default hotkey",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Restore Default" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "恢复默认" } }
+      }
+    },
+    "settings.hotkey.section" : {
+      "comment" : "Settings section: global shortcut",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Global Shortcut" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "全局快捷键" } }
+      }
+    },
+    "settings.hotkey.taken" : {
+      "comment" : "Shortcut already in use",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "This combination is already used by macOS or another app. Choose another." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "这个组合已被 macOS 或其他应用占用，请换一个组合。" } }
+      }
+    },
+    "settings.ignoredApps.empty" : {
+      "comment" : "Empty ignored apps list",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "No ignored apps yet." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "目前没有忽略的应用。" } }
+      }
+    },
+    "settings.ignoredApps.footnote" : {
+      "comment" : "Ignored apps coming soon",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copies from listed apps will be ignored. Adding apps arrives in the next update; the setting is already saved in one place." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "来自这些应用的复制会被忽略。添加应用会在下一波接入；设置键已经集中存放。" } }
+      }
+    },
+    "settings.ignoredApps.section" : {
+      "comment" : "Ignored apps section",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Ignored Apps" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "忽略的应用" } }
+      }
+    },
+    "settings.launchAtLogin.failed" : {
+      "comment" : "Launch at login update failed",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Could not update launch at login. Try again later." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开机自启动更新失败，请稍后重试。" } }
+      }
+    },
+    "settings.launchAtLogin.needsApproval" : {
+      "comment" : "Login item waiting for approval",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at login is waiting for approval. Allow NeatPaste in System Settings → General → Login Items." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开机自启动等待系统批准。请在「系统设置 › 通用 › 登录项」中允许 NeatPaste。" } }
+      }
+    },
+    "settings.launchAtLogin.openSettings" : {
+      "comment" : "Open login items settings",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open System Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "打开系统设置" } }
+      }
+    },
+    "settings.launchAtLogin.section" : {
+      "comment" : "Launch at login section",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Launch at Login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "开机自启动" } }
+      }
+    },
+    "settings.launchAtLogin.toggle" : {
+      "comment" : "Launch at login toggle",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Open NeatPaste at login" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "登录时打开 NeatPaste" } }
+      }
+    },
+    "settings.title" : {
+      "comment" : "Settings window title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Settings" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "设置" } }
+      }
+    },
+    "status.item.accessibility" : {
+      "comment" : "Menu bar icon accessibility label",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "NeatPaste" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "NeatPaste" } }
+      }
+    }
+  },
+  "version" : "1.0"
+}

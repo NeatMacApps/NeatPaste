@@ -1,0 +1,119 @@
+name: NeatPaste
+
+options:
+  deploymentTarget:
+    macOS: "26.0"
+  xcodeVersion: "16.2"
+  createIntermediateGroups: true
+  groupSortPosition: top
+  developmentLanguage: en
+  knownRegions:
+    - en
+    - Base
+    - zh-Hans
+  defaultConfig: Debug
+
+configs:
+  Debug: debug
+  Release: release
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MACOSX_DEPLOYMENT_TARGET: "26.0"
+    CODE_SIGN_STYLE: Automatic
+    DEVELOPMENT_TEAM: SHZQ3MWP3B
+    CURRENT_PROJECT_VERSION: 1
+    MARKETING_VERSION: 0.1.0
+    COMBINE_HIDPI_IMAGES: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
+    SWIFT_STRICT_CONCURRENCY: complete
+    SWIFT_DEFAULT_ACTOR_ISOLATION: MainActor
+    SWIFT_APPROACHABLE_CONCURRENCY: YES
+    ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS: YES
+    ENABLE_HARDENED_RUNTIME: NO
+  configs:
+    Debug:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: DEBUG
+      ENABLE_TESTABILITY: YES
+    Release:
+      SWIFT_ACTIVE_COMPILATION_CONDITIONS: ""
+      CODE_SIGN_STYLE: Manual
+      CODE_SIGN_IDENTITY: "Developer ID Application"
+      ENABLE_HARDENED_RUNTIME: YES
+      OTHER_CODE_SIGN_FLAGS: "--timestamp"
+      CODE_SIGN_INJECT_BASE_ENTITLEMENTS: NO
+
+configFiles:
+  Debug: Configuration/Debug.xcconfig
+  Release: Configuration/Release.xcconfig
+
+fileGroups:
+  - Configuration
+  - README.md
+  - README.zh.md
+  - AGENTS.md
+  - CLAUDE.md
+  - LICENSE
+  - docs
+
+targets:
+  NeatPaste:
+    type: application
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - NeatPaste
+    entitlements:
+      path: NeatPaste/NeatPaste.entitlements
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.x0c.NeatPaste
+        PRODUCT_NAME: NeatPaste
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_FILE: NeatPaste/Info.plist
+        INFOPLIST_KEY_CFBundleDisplayName: NeatPaste
+        INFOPLIST_KEY_CFBundleName: NeatPaste
+        INFOPLIST_KEY_LSUIElement: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        INFOPLIST_KEY_NSHumanReadableCopyright: "Copyright © 2026 x0c. Released under the MIT License."
+        INFOPLIST_KEY_NSMainStoryboardFile: ""
+        INFOPLIST_KEY_NSPrincipalClass: NSApplication
+        LD_RUNPATH_SEARCH_PATHS:
+          - $(inherited)
+          - "@executable_path/../Frameworks"
+
+  NeatPasteTests:
+    type: bundle.unit-test
+    platform: macOS
+    deploymentTarget: "26.0"
+    sources:
+      - NeatPasteTests
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.x0c.NeatPaste.tests
+        PRODUCT_NAME: NeatPasteTests
+        GENERATE_INFOPLIST_FILE: YES
+        ENABLE_TESTABILITY: YES
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: NO
+        SWIFT_DEFAULT_ACTOR_ISOLATION: nonisolated
+    dependencies:
+      - target: NeatPaste
+
+schemes:
+  NeatPaste:
+    build:
+      targets:
+        NeatPaste: all
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - name: NeatPasteTests
+    analyze:
+      config: Debug
+    archive:
+      config: Release
