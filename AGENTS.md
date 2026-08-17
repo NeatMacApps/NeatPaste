@@ -12,7 +12,7 @@ NeatPaste 是 macOS 菜单栏剪贴板历史工具：复制后可唤出面板，
 |---|---|---|
 | `app-macos/` | macOS 客户端（独立 git 仓库） | 第一波骨架 |
 
-Remote 尚未建立；发版与 Forgejo/GitHub 由后续流程处理，本产品文件夹不是 git 仓库。
+Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github.com/NeatMacApps/NeatPaste ）；本产品文件夹不是 git 仓库。首次开源发布已完成；对外发行渠道（签名 dmg、Homebrew）待后续接入。
 
 ## 明确不做
 
@@ -35,6 +35,7 @@ Remote 尚未建立；发版与 Forgejo/GitHub 由后续流程处理，本产品
 - 面板外框通透玻璃（不要雾面块），搜索和列表同一块实底、搜索不要单独描边；预览走系统 Quick Look，不要做常驻预览栏，也不要加标题栏
 - 启动瞬间与搜索框无系统蓝框，并补自有焦点态
 - 窗口位置 / 尺寸记忆（设置窗；历史面板每次打开都重新锚到输入位置，不记忆）
+- README 开源门面截图：面板图与设置窗图待拍后存入 `docs/images/` 并取消两份 README 里的注释区（用户自理，拍图前注意剪贴板内容脱敏）
 
 ## 文档导航
 
@@ -44,12 +45,12 @@ Remote 尚未建立；发版与 Forgejo/GitHub 由后续流程处理，本产品
 - [app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
 - [../_standards/swift.md](../_standards/swift.md)：新建、评审或改造本 macOS 应用前**必读**。不读会偏离开源 Mac 应用的签名、本地化、无蓝框和覆盖安装闭环。
 - [../_standards/workspace-docs/swift-docs/macos-app-baseline.md](../_standards/workspace-docs/swift-docs/macos-app-baseline.md)：新建、脚手架、评审本应用完整度、补分发/开机自启/快捷键/设置窗前**必读**。不读会把「第一波能跑」当成完成，或把未对外发行的暂缓当成可以永久不做。
+- [../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标或菜单栏图标前**必读**。不读会再补一套扁平切图，系统会把图标降成灰底。
 - [../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md](../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md)：改菜单栏生命周期、悬浮面板、退出拦截、开机自启、系统剪贴板收录/写回或本机冒烟日志前**必读**。不读会在新系统上被自动退出，或漏收刚复制的内容。
 - [../_standards/workspace-docs/swift-docs/liquid-glass-practices.md](../_standards/workspace-docs/swift-docs/liquid-glass-practices.md)：改面板玻璃、透明度或列表底色前**必读**。不读会把列表做成整窗透明，字看不清。
 - [../_standards/workspace-docs/swift-docs/apple-app-preferences.md](../_standards/workspace-docs/swift-docs/apple-app-preferences.md)：新增设置项或改设置窗口打开方式前**必读**。不读会出现设置打不开、键名散落或默认值不一致。
 - [../_standards/workspace-docs/swift-docs/macos-system-permissions.md](../_standards/workspace-docs/swift-docs/macos-system-permissions.md)：改粘贴所需的辅助功能授权、引导或降级态前**必读**。不读会在用户拒绝后反复弹窗，或拒绝后整段粘贴不可用。
 - [../_standards/workspace-docs/swift-docs/apple-localization.md](../_standards/workspace-docs/swift-docs/apple-localization.md)：改用户可见文案或补语言前**必读**。不读会把键名显示给用户，或只改一种语言。
-- [../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标或菜单栏图标前**必读**。不读会再补一套扁平切图，系统会把图标降成灰底。
 
 <!-- managed:inherited-agents:end -->
 

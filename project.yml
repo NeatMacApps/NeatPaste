@@ -51,7 +51,7 @@ configFiles:
 fileGroups:
   - Configuration
   - README.md
-  - README.zh.md
+  - README.zh-CN.md
   - AGENTS.md
   - CLAUDE.md
   - LICENSE
