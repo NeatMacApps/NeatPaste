@@ -90,6 +90,11 @@ final class StatusItemController: NSObject {
         ]
     }
 
+    func buttonScreenFrame() -> NSRect? {
+        guard let button = statusItem.button, let window = button.window else { return nil }
+        return window.convertToScreen(button.convert(button.bounds, to: nil))
+    }
+
     @objc
     private func handleClick(_ sender: Any?) {
         guard let event = NSApp.currentEvent else {

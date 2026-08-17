@@ -14,7 +14,11 @@ final class AppPreferences {
         static let hotkeyModifiers = "hotkey.modifiers"
         static let hotkeyEnabled = "hotkey.enabled"
         static let ignoredAppBundleIDs = "ignore.bundleIDs"
+        static let hotkeyDefaultGeneration = "hotkey.defaultGeneration"
     }
+
+    /// 出厂默认快捷键代数。从 1（⌘⇧V）升到 2（⌘⌥V）时，只覆盖仍停在旧出厂值的安装，不覆盖用户改过的组合。
+    nonisolated static let currentHotkeyDefaultGeneration = 2
 
     /// 历史只保留 7 天。
     nonisolated static let historyLifetime: TimeInterval = 7 * 24 * 3600
@@ -23,7 +27,12 @@ final class AppPreferences {
     nonisolated static let clipboardPollInterval: TimeInterval = 0.5
 
     nonisolated static let rowHeight: CGFloat = 44
-    nonisolated static let panelSize = NSSize(width: 680, height: 440)
+    nonisolated static let panelSize = NSSize(width: 320, height: 432)
+    nonisolated static let panelCornerRadius: CGFloat = 20
+    /// 系统预览的默认尺寸：小窗，不要跟着文本把屏幕占满。
+    nonisolated static let quickLookSize = NSSize(width: 480, height: 360)
+    nonisolated static let quickLookMinSize = NSSize(width: 320, height: 240)
+    nonisolated static let quickLookMaxSize = NSSize(width: 560, height: 420)
 
     var ignoredAppBundleIDs: [String] {
         didSet {
@@ -62,5 +71,13 @@ final class AppPreferences {
             UInt32(UserDefaults.standard.integer(forKey: Key.hotkeyKeyCode)),
             UInt32(UserDefaults.standard.integer(forKey: Key.hotkeyModifiers))
         )
+    }
+
+    func hotkeyDefaultGeneration() -> Int {
+        UserDefaults.standard.integer(forKey: Key.hotkeyDefaultGeneration)
+    }
+
+    func markHotkeyDefaultGeneration(_ value: Int) {
+        UserDefaults.standard.set(value, forKey: Key.hotkeyDefaultGeneration)
     }
 }

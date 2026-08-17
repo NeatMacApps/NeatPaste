@@ -12,6 +12,12 @@ final class HotkeyManager: ObservableObject {
 
         static let safeDefault = Shortcut(
             keyCode: UInt32(kVK_ANSI_V),
+            modifiers: UInt32(cmdKey | optionKey)
+        )
+
+        /// 上一版出厂默认。仍停在这个组合的安装视为未自定义，随新出厂值一起改。
+        static let retiredFactoryDefault = Shortcut(
+            keyCode: UInt32(kVK_ANSI_V),
             modifiers: UInt32(cmdKey | shiftKey)
         )
 
@@ -216,10 +222,24 @@ final class HotkeyManager: ObservableObject {
     }
 
     private static func savedShortcut() -> Shortcut? {
+        migrateRetiredFactoryDefaultIfNeeded()
         guard AppPreferences.shared.isHotkeyEnabled() else { return nil }
         if let stored = AppPreferences.shared.storedHotkey() {
             return Shortcut(keyCode: stored.keyCode, modifiers: stored.modifiers)
         }
         return .safeDefault
+    }
+
+    /// 出厂默认从 ⌘⇧V 改为 ⌘⌥V：只改还停在旧出厂值的安装。
+    private static func migrateRetiredFactoryDefaultIfNeeded() {
+        let prefs = AppPreferences.shared
+        guard prefs.hotkeyDefaultGeneration() < AppPreferences.currentHotkeyDefaultGeneration else { return }
+        if let stored = prefs.storedHotkey() {
+            let current = Shortcut(keyCode: stored.keyCode, modifiers: stored.modifiers)
+            if current == .retiredFactoryDefault {
+                prefs.saveHotkey(keyCode: Shortcut.safeDefault.keyCode, modifiers: Shortcut.safeDefault.modifiers)
+            }
+        }
+        prefs.markHotkeyDefaultGeneration(AppPreferences.currentHotkeyDefaultGeneration)
     }
 }

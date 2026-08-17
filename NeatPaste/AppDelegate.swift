@@ -18,7 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     let panelModel: HistoryPanelModel
 
     override init() {
-        let history = InMemoryHistoryStore()
+        let history = InMemoryHistoryStore(storageURL: InMemoryHistoryStore.defaultStorageURL())
         self.history = history
         self.clipboardMonitor = ClipboardMonitor(history: history)
         self.panelModel = HistoryPanelModel(history: history)
@@ -31,9 +31,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         clipboardMonitor.start()
 
         let panel = HistoryPanel(model: panelModel)
+        panel.orderOut(nil)
         self.panel = panel
         panelModel.onHide = { [weak panel] in
             panel?.hidePanel()
+        }
+        panelModel.onSuppressClickThrough = { [weak panel] in
+            panel?.suppressClickThrough()
         }
         panelModel.onPasteOutcome = { [weak self] outcome in
             if outcome == .copiedOnly {
@@ -47,6 +51,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onOpenSettings: { SettingsWindowController.shared.show() },
             onQuit: { [weak self] in self?.requestTermination() }
         )
+        panel.additionalKeptFrames = { [weak statusItemController] in
+            statusItemController?.buttonScreenFrame().map { [$0] } ?? []
+        }
 
         HotkeyManager.shared.onHotKey = { [weak self] in
             self?.togglePanel()
@@ -97,9 +104,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func showPanel() {
         guard let panel else { return }
+        // 必须在异步刷新之前记下光标，否则面板一旦成为焦点就只能锚到自己身上。
+        let frame = PanelAnchor.frame(for: AppPreferences.panelSize)
         Task { @MainActor in
+            await clipboardMonitor.poll()
             await panelModel.reload()
-            panel.showPanel()
+            panel.showPanel(frame: frame)
         }
     }
 }

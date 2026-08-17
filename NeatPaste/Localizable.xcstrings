@@ -97,20 +97,36 @@
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "条目已写入系统剪贴板。" } }
       }
     },
+    "panel.history.empty" : {
+      "comment" : "Empty history list",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Copy something. It will show up here." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "复制任意内容，就会出现在这里。" } }
+      }
+    },
+    "panel.preview.title" : {
+      "comment" : "System preview window title",
+      "extractionState" : "manual",
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Preview" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "预览" } }
+      }
+    },
     "panel.image.placeholder" : {
-      "comment" : "Accessibility label for image placeholder",
+      "comment" : "List title and accessibility label when the item is an image without a readable name",
       "extractionState" : "manual",
       "localizations" : {
         "en" : { "stringUnit" : { "state" : "translated", "value" : "Image" } },
         "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "图片" } }
       }
     },
-    "panel.preview.empty" : {
-      "comment" : "Empty preview pane",
+    "panel.search.clear" : {
+      "comment" : "Clear search field",
       "extractionState" : "manual",
       "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Select an item to preview" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "选中一条即可预览" } }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Clear search" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "清除搜索" } }
       }
     },
     "panel.search.placeholder" : {
