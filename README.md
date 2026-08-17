@@ -21,13 +21,26 @@ This is a macOS clipboard history manager, unrelated to the iOS text-cleaning ap
 
 ## Install
 
-A signed disk image is not published yet. Build from source:
+### Homebrew (recommended)
 
-1. Install Xcode 26+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
-2. Clone this repository.
-3. From the repository root:
+```sh
+brew tap x0c/tap
+brew install --cask neatpaste
+```
 
-```bash
+### Direct download
+
+Grab the latest **signed and notarized** `NeatPaste-x.y.z.dmg` from the [releases](https://github.com/NeatMacApps/NeatPaste/releases/latest) page, then drag NeatPaste to `/Applications`.
+
+NeatPaste checks for updates automatically (via [Sparkle](https://sparkle-project.org)); there is also a **Check for Updates…** item in the menu bar menu.
+
+### Build from source
+
+Requires Xcode 26+ and [XcodeGen](https://github.com/yonaskolb/XcodeGen):
+
+```sh
+git clone https://github.com/NeatMacApps/NeatPaste.git
+cd NeatPaste
 xcodegen generate
 xcodebuild -project NeatPaste.xcodeproj -scheme NeatPaste -configuration Release \
   -destination 'platform=macOS' -derivedDataPath build/DerivedData build

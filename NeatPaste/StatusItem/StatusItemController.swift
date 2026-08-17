@@ -8,17 +8,20 @@ final class StatusItemController: NSObject {
     private let onOpenPanel: () -> Void
     private let onTogglePanel: () -> Void
     private let onOpenSettings: () -> Void
+    private let onCheckForUpdates: () -> Void
     private let onQuit: () -> Void
 
     init(
         onOpenPanel: @escaping () -> Void,
         onTogglePanel: @escaping () -> Void,
         onOpenSettings: @escaping () -> Void,
+        onCheckForUpdates: @escaping () -> Void,
         onQuit: @escaping () -> Void
     ) {
         self.onOpenPanel = onOpenPanel
         self.onTogglePanel = onTogglePanel
         self.onOpenSettings = onOpenSettings
+        self.onCheckForUpdates = onCheckForUpdates
         self.onQuit = onQuit
 
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -72,6 +75,13 @@ final class StatusItemController: NSObject {
         )
         aboutItem.target = self
 
+        let checkForUpdatesItem = NSMenuItem(
+            title: String(localized: "menu.checkForUpdates"),
+            action: #selector(checkForUpdates(_:)),
+            keyEquivalent: ""
+        )
+        checkForUpdatesItem.target = self
+
         let quitItem = NSMenuItem(
             title: String(localized: "menu.quit"),
             action: #selector(quit(_:)),
@@ -85,6 +95,7 @@ final class StatusItemController: NSObject {
             .separator(),
             launchAtLoginItem,
             .separator(),
+            checkForUpdatesItem,
             aboutItem,
             quitItem
         ]
@@ -135,6 +146,11 @@ final class StatusItemController: NSObject {
             .applicationName: "NeatPaste",
             .credits: NSAttributedString(string: String(localized: "about.credits"))
         ])
+    }
+
+    @objc
+    private func checkForUpdates(_ sender: Any?) {
+        onCheckForUpdates()
     }
 
     @objc

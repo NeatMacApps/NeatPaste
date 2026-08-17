@@ -1,2 +1,6 @@
 # 测试夹具里是嵌入的 PNG 资源字节，不是密钥
 fp:4b2099c957dd859e
+# 更新清单里的 EdDSA 签名是公开的验签数据，不是密钥
+rule:high-entropy:appcast.xml
+# 本地配置模板的占位符账号名被误判为内部域名
+rule:internal-domain:scripts/publish-local.env.example

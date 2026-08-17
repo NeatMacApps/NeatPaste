@@ -9,5 +9,17 @@
 		<string>en</string>
 		<string>zh-Hans</string>
 	</array>
+	<key>SUFeedURL</key>
+	<string>https://raw.githubusercontent.com/NeatMacApps/NeatPaste/main/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>0nk/wv36FgctLwob/oEocAaBMuXapY7BZ8+ae1RJ9bU=</string>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUAutomaticallyUpdate</key>
+	<true/>
+	<key>SURequireSignedFeed</key>
+	<true/>
+	<key>SUVerifyUpdateBeforeExtraction</key>
+	<true/>
 </dict>
 </plist>

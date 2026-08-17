@@ -24,7 +24,7 @@ settings:
     CODE_SIGN_STYLE: Automatic
     DEVELOPMENT_TEAM: SHZQ3MWP3B
     CURRENT_PROJECT_VERSION: 1
-    MARKETING_VERSION: 0.1.0
+    MARKETING_VERSION: 1.0.0
     COMBINE_HIDPI_IMAGES: YES
     SWIFT_EMIT_LOC_STRINGS: YES
     SWIFT_STRICT_CONCURRENCY: complete
@@ -47,6 +47,11 @@ settings:
 configFiles:
   Debug: Configuration/Debug.xcconfig
   Release: Configuration/Release.xcconfig
+
+packages:
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    from: "2.9.2"
 
 fileGroups:
   - Configuration
@@ -83,6 +88,9 @@ targets:
         LD_RUNPATH_SEARCH_PATHS:
           - $(inherited)
           - "@executable_path/../Frameworks"
+    dependencies:
+      - package: Sparkle
+        product: Sparkle
 
   NeatPasteTests:
     type: bundle.unit-test

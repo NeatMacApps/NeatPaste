@@ -101,6 +101,14 @@ xcodebuild -project NeatPaste.xcodeproj -scheme NeatPaste -configuration Debug \
   -destination 'platform=macOS' -derivedDataPath build/DerivedData test
 ```
 
+对外发版（签名公证 dmg + Sparkle 更新包 + GitHub Release + appcast，一条命令、可重复执行；`--local-only` 只产本地公证包不碰远端）：
+
+```bash
+scripts/publish-release.sh
+```
+
+首次安装渠道：GitHub Release 的公证 dmg 与 Homebrew（`x0c/tap` 的 `neatpaste` cask）；自动更新源为仓库根 `appcast.xml`（raw 地址）。版本号双写于 `Configuration/Base.xcconfig` 与 `project.yml`，发版脚本会比对一致性并拦截回退。
+
 覆盖安装必须先删旧包再整包复制，不能往已存在的应用里合并：
 
 ```bash

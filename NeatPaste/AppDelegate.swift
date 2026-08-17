@@ -9,6 +9,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: HistoryPanel?
     private var statusItemController: StatusItemController?
     private var commaMonitor: Any?
+    private let appUpdater = AppUpdater()
 
     /// 置为 true 时允许 `applicationShouldTerminate` 放行；区分用户点击「退出」与系统自动终止。
     private var allowTermination = false
@@ -49,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             onOpenPanel: { [weak self] in self?.showPanel() },
             onTogglePanel: { [weak self] in self?.togglePanel() },
             onOpenSettings: { SettingsWindowController.shared.show() },
+            onCheckForUpdates: { [weak appUpdater] in appUpdater?.checkForUpdates(nil) },
             onQuit: { [weak self] in self?.requestTermination() }
         )
         panel.additionalKeptFrames = { [weak statusItemController] in
@@ -72,6 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         if allowTermination { return .terminateNow }
+        // Sparkle「安装并重新打开」会发 terminate；更新会话进行中必须放行，
+        // 否则按钮无响应，安装永远不会开始。
+        if appUpdater.updater.sessionInProgress { return .terminateNow }
         return .terminateCancel
     }
 
