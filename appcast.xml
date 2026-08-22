@@ -12,7 +12,7 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>2</sparkle:version>
             <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.1/NeatPaste-1.0.1.zip" length="4433097" type="application/octet-stream" sparkle:edSignature="OSsDRQQBFR5Wrv7s5+eh+4z3GV33E/JIPpISlbWE3aADLIozGe61YnmvlfjouynsXUhuvLa+0yFHa4qJd4hGDA=="/>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.1/NeatPaste-1.0.1.zip" length="4433067" type="application/octet-stream" sparkle:edSignature="LRKWS3sCQvr4aHv5HSLTxblegC4POe6z+P4iDHFnmMW5monoFqH5lIWGRZXTMG82E8dkL+lllaoAzRjWLkzMDg=="/>
         </item>
         <item>
             <title>1.0.0</title>
@@ -26,6 +26,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: MNeKKzC24ekvUxbhYmlz2H8Bk6QDY70KTCsepiPSqJXigUAwSKW9w45pxZci3IIP4QLC9zTVs6LdJvR89fzlDA==
+edSignature: 64rHAtGzOD6E8K7BqSzZb3vbdVcZJf0PQZL/IEF1JLSf/tJ5jlSZWZDBP53H/9t88fXGMeYD9cP00aykj9nUBQ==
 length: 1777
 -->
