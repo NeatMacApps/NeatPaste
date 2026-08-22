@@ -1,8 +1,19 @@
-<?xml version="1.0" standalone="yes"?><!-- sparkle-sign-warning:
+<?xml version="1.0" standalone="yes"?>
+<!-- sparkle-sign-warning:
 IMPORTANT: This file was signed by Sparkle. Any modifications to this file requires re-signing this file with generate_appcast or sign_update! The signed signature will be embedded at the end of this file.
---><rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+-->
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
     <channel>
         <title>NeatPaste</title>
+        <item>
+            <title>1.0.1</title>
+            <pubDate>Sat, 22 Aug 2026 12:00:24 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatPaste</link>
+            <sparkle:version>2</sparkle:version>
+            <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.1/NeatPaste-1.0.1.zip" length="4433042" type="application/octet-stream" sparkle:edSignature="A6cctGQoMrH4IpvydjKeaRSWKFi4A/P6Qif1slj+luBrOkQy4+vDoVIu7bGribpBBR3cDxbwt6EHTofAzd7iBw=="/>
+        </item>
         <item>
             <title>1.0.0</title>
             <pubDate>Mon, 17 Aug 2026 21:36:26 +0800</pubDate>
@@ -10,10 +21,11 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:version>1</sparkle:version>
             <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.0/NeatPaste-1.0.0.zip" length="3579611" type="application/octet-stream" sparkle:edSignature="eAoXcixVH/dDL90tZMW+4227dvQ1setmCn8m6mUjifEdTYgmLlXsvhZlZuKoCD6zFd737YQT3LTcmuAKtt+dCw=="></enclosure>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.0/NeatPaste-1.0.0.zip" length="3579611" type="application/octet-stream" sparkle:edSignature="eAoXcixVH/dDL90tZMW+4227dvQ1setmCn8m6mUjifEdTYgmLlXsvhZlZuKoCD6zFd737YQT3LTcmuAKtt+dCw=="/>
         </item>
     </channel>
-</rss><!-- sparkle-signatures:
-edSignature: 01yh0r4qdnDBtJc74QMrMzPjrPyABXYW8AXouEx9g2zVtbJN+BTcvEtZeUrCOZQpgqE9Bf5cYI5fnEieIEMgBg==
-length: 1113
+</rss>
+<!-- sparkle-signatures:
+edSignature: 9ayiwT7ShzMGYl3STPZWphJu0soIV6i80wRq26D1hXtPNUG/+Huu+L1soseNTZocVEQgieh+64UWSn+3M+KQBQ==
+length: 1777
 -->
