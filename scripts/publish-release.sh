@@ -234,7 +234,7 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- History list no longer shows a scrollbar when a mouse is connected. Wheel, trackpad, and arrow keys still scroll.
+- Refreshed the menu-bar icon with the NeatPaste overlapping keycap mark.
 EOF
 
 appcast_dir="${work_dir}/appcast"

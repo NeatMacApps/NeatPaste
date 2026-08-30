@@ -8,88 +8,202 @@
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw
 
 
-def _scaled_box(values: tuple[float, float, float, float], unit: float) -> tuple[int, int, int, int]:
-    """把 36 单位画布中的矩形换算为高分辨率像素。"""
-    x0, y0, x1, y1 = values
-    return (
-        round(x0 * unit),
-        round(y0 * unit),
-        round(x1 * unit),
-        round(y1 * unit),
+BASE_SIZE = 18
+MASTER_SIZE = 1152
+BLACK = 255
+
+
+def _px(value: float, unit: float) -> int:
+    return round(value * unit)
+
+
+def _rounded_rectangle(
+    draw: ImageDraw.ImageDraw,
+    box: tuple[float, float, float, float],
+    radius: float,
+    unit: float,
+    fill: int,
+) -> None:
+    draw.rounded_rectangle(
+        tuple(_px(value, unit) for value in box),
+        radius=_px(radius, unit),
+        fill=fill,
     )
 
 
-def _draw_command_glyph(draw: ImageDraw.ImageDraw, unit: float) -> None:
-    """绘制适合菜单栏小尺寸的四环 ⌘ 符号。"""
-    stroke = max(1, round(1.65 * unit))
-    centers = ((9.35, 11.45), (18.05, 11.45), (9.35, 18.55), (18.05, 18.55))
+def _draw_command_glyph(
+    draw: ImageDraw.ImageDraw,
+    center: tuple[float, float],
+    unit: float,
+) -> None:
+    """绘制源图中的四环 ⌘，在 18px 下保持连续实心核心。"""
+    center_x, center_y = center
+    stroke = max(1, _px(1.45, unit))
+    radius = 1.65
+    loop_centers = (
+        (center_x - 1.65, center_y - 1.65),
+        (center_x + 1.65, center_y - 1.65),
+        (center_x - 1.65, center_y + 1.65),
+        (center_x + 1.65, center_y + 1.65),
+    )
 
     draw.line(
-        [(round(9.35 * unit), round(15 * unit)), (round(18.05 * unit), round(15 * unit))],
-        fill=255,
+        [(_px(center_x - 1.65, unit), _px(center_y, unit)),
+         (_px(center_x + 1.65, unit), _px(center_y, unit))],
+        fill=BLACK,
         width=stroke,
     )
     draw.line(
-        [(round(13.7 * unit), round(11.45 * unit)), (round(13.7 * unit), round(18.55 * unit))],
-        fill=255,
+        [(_px(center_x, unit), _px(center_y - 1.65, unit)),
+         (_px(center_x, unit), _px(center_y + 1.65, unit))],
+        fill=BLACK,
         width=stroke,
     )
 
-    radius = 2.2 * unit
-    for center_x, center_y in centers:
+    for loop_x, loop_y in loop_centers:
         draw.ellipse(
             (
-                round(center_x * unit - radius),
-                round(center_y * unit - radius),
-                round(center_x * unit + radius),
-                round(center_y * unit + radius),
+                _px(loop_x - radius, unit),
+                _px(loop_y - radius, unit),
+                _px(loop_x + radius, unit),
+                _px(loop_y + radius, unit),
             ),
-            outline=255,
+            outline=BLACK,
             width=stroke,
         )
 
 
-def make_clip(size: int) -> Image.Image:
-    """在高分辨率画布上重绘双键帽菜单栏模板图。"""
-    image = Image.new("L", (size, size), 0)
-    draw = ImageDraw.Draw(image)
-    unit = size / 36
+def _draw_c_glyph(
+    draw: ImageDraw.ImageDraw,
+    center: tuple[float, float],
+    width: float,
+    height: float,
+    unit: float,
+) -> None:
+    """用单一弧线保留后层 C 标记，开口朝右。"""
+    center_x, center_y = center
+    radius_x = width / 2
+    radius_y = height / 2
+    points = []
+    for index in range(49):
+        angle = math.radians(-60 - index * 5)
+        points.append(
+            (_px(center_x + radius_x * math.cos(angle), unit),
+             _px(center_y + radius_y * math.sin(angle), unit))
+        )
+    stroke = max(1, _px(1.20, unit))
+    draw.line(points, fill=BLACK, width=stroke, joint="curve")
+    cap_radius = stroke / 2
+    for point_x, point_y in (points[0], points[-1]):
+        draw.ellipse(
+            (round(point_x - cap_radius), round(point_y - cap_radius),
+             round(point_x + cap_radius), round(point_y + cap_radius)),
+            fill=BLACK,
+        )
 
-    # 后层只保留右侧与下侧轮廓，交叠区域的上半段不画线。
-    rear_points = (
-        (30.3, 12.0),
-        (31.5, 12.2),
-        (32.6, 13.1),
-        (33.1, 14.5),
-        (33.2, 16.2),
-        (33.2, 27.3),
-        (33.1, 28.7),
-        (32.4, 30.0),
-        (31.0, 31.0),
-        (29.0, 31.5),
-        (18.2, 31.5),
+
+def _rotated_key_layer(
+    size: int,
+    center: tuple[float, float],
+    width: float,
+    height: float,
+    radius: float,
+    angle: float,
+    face_inset: float | None,
+    face_offset: tuple[float, float],
+    marker: str | None,
+) -> Image.Image:
+    """在高分辨率画布绘制一个键帽，并绕自身中心旋转。"""
+    unit = size / BASE_SIZE
+    layer = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(layer)
+    center_x, center_y = center
+    outer = (
+        center_x - width / 2,
+        center_y - height / 2,
+        center_x + width / 2,
+        center_y + height / 2,
     )
-    draw.line(
-        [(round(x * unit), round(y * unit)) for x, y in rear_points],
-        fill=255,
-        width=max(1, round(2 * unit)),
-        joint="curve",
+    _rounded_rectangle(draw, outer, radius, unit, BLACK)
+
+    if face_inset is not None:
+        inner = (
+            center_x - width / 2 + face_inset + face_offset[0],
+            center_y - height / 2 + face_inset + face_offset[1],
+            center_x + width / 2 - face_inset + face_offset[0],
+            center_y + height / 2 - face_inset + face_offset[1],
+        )
+        _rounded_rectangle(draw, inner, max(0.1, radius - face_inset * 0.7), unit, 0)
+
+        if marker == "C":
+            _draw_c_glyph(draw, (center_x + 0.55, center_y + 0.65), 3.65, 4.65, unit)
+        elif marker == "command":
+            _draw_command_glyph(draw, (center_x, center_y - 0.55), unit)
+            _rounded_rectangle(
+                draw,
+                (center_x - 4.35 / 2, center_y + 4.35 - 1.28 / 2,
+                 center_x + 4.35 / 2, center_y + 4.35 + 1.28 / 2),
+                0.64,
+                unit,
+                BLACK,
+            )
+
+    return layer.rotate(
+        angle,
+        resample=Image.Resampling.BICUBIC,
+        center=(_px(center_x, unit), _px(center_y, unit)),
+        expand=False,
     )
 
-    # 前层键帽是黑色外环，内页保持透明。
-    outer = _scaled_box((2.75, 3.0, 26.25, 27.8), unit)
-    inner = _scaled_box((5.10, 5.45, 23.90, 25.05), unit)
-    draw.rounded_rectangle(outer, radius=round(4.7 * unit), fill=255)
-    draw.rounded_rectangle(inner, radius=round(3.15 * unit), fill=0)
-    _draw_command_glyph(draw, unit)
 
-    # 高分辨率旋转后缩小，边缘只通过 alpha 抗锯齿，不引入灰色像素。
-    return image.rotate(-8, resample=Image.BICUBIC, expand=False)
+def make_clip(size: int = MASTER_SIZE) -> Image.Image:
+    """按母版的前后遮挡关系重绘模板图。"""
+    rear_center = (11.65, 11.25)
+    rear = _rotated_key_layer(
+        size,
+        rear_center,
+        width=10.25,
+        height=10.15,
+        radius=2.05,
+        angle=-6.0,
+        face_inset=1.08,
+        face_offset=(0, -0.12),
+        marker="C",
+    )
+
+    front_center = (6.85, 6.15)
+    front_silhouette = _rotated_key_layer(
+        size,
+        front_center,
+        width=12.65,
+        height=12.05,
+        radius=2.35,
+        angle=-6.0,
+        face_inset=None,
+        face_offset=(0, 0),
+        marker=None,
+    )
+    # 前层完整遮住后层，避免后层线条从前层透明内页穿出。
+    rear = ImageChops.subtract(rear, front_silhouette)
+
+    front = _rotated_key_layer(
+        size,
+        front_center,
+        width=12.65,
+        height=12.05,
+        radius=2.35,
+        angle=-6.0,
+        face_inset=1.12,
+        face_offset=(0, -0.40),
+        marker="command",
+    )
+    return ImageChops.lighter(rear, front)
 
 
 def export(master: Image.Image, pixel_size: int, path: Path) -> None:
@@ -104,6 +218,7 @@ if __name__ == "__main__":
     here = Path(__file__).resolve().parent
     imageset = here.parent.parent.parent / "NeatPaste/Assets.xcassets/MenuBarIcon.imageset"
     imageset.mkdir(parents=True, exist_ok=True)
-    export(make_clip(1152), 18, imageset / "menubar.png")
-    export(make_clip(1152), 36, imageset / "menubar@2x.png")
+    master = make_clip()
+    export(master, 18, imageset / "menubar.png")
+    export(master, 36, imageset / "menubar@2x.png")
     print(f"已生成：{imageset}/menubar.png 与 menubar@2x.png")
