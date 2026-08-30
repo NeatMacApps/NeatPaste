@@ -106,7 +106,8 @@ struct HistoryPanelView: View {
                         }
                         .padding(6)
                     }
-                    .scrollIndicators(.hidden)
+                    // Mac 接鼠标时 `.hidden` 只是建议，系统仍会画出滚动条；契约要求永不显示。
+                    .scrollIndicators(.never)
                     .onChange(of: model.selectedID) { _, id in
                         if let id {
                             proxy.scrollTo(id, anchor: .center)

@@ -41,7 +41,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 - [app-macos/AGENTS.md](app-macos/AGENTS.md)：改、评审或排查 macOS 客户端工程、面板、预览窗、热键、菜单栏、去重、光标锚点、收录探测或覆盖安装前**必读**。不读会把面板做成抢焦点、用错菜单栏实现，把预览限尺寸拿掉，漏收刚复制的内容，或覆盖安装把签名装坏。
 - [app-macos/docs/PRODUCT_CONTRACT.md](app-macos/docs/PRODUCT_CONTRACT.md)：改、评审或排查任何用户可见行为、历史保留、粘贴、收录探测、预览、去重、面板位置与「明确不做」的范围前**必读**。不读会把已钉死的体验改掉，或把后续不做的能力做进去。
-- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，给搜索单独加粗框，或把外框做成雾面块。
+- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
 - [app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
 - [../_standards/swift.md](../_standards/swift.md)：新建、评审或改造本 macOS 应用前**必读**。不读会偏离开源 Mac 应用的签名、本地化、无蓝框和覆盖安装闭环。
 - [../_standards/workspace-docs/swift-docs/macos-app-baseline.md](../_standards/workspace-docs/swift-docs/macos-app-baseline.md)：新建、脚手架、评审本应用完整度、补分发/开机自启/快捷键/设置窗前**必读**。不读会把「第一波能跑」当成完成，或把未对外发行的暂缓当成可以永久不做。
@@ -70,7 +70,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 - **面板禁止激活本应用。** 打开历史面板时不得把本应用切到前台，否则回车粘贴会贴到自己身上。用非激活浮层、`orderFrontRegardless()` + `makeKey()`，不要走会抢焦点的激活。
 - **点未选中只改选中，再点已选中或双击才粘贴。** 不要做成「点一下就粘贴」。打开后面板已默认选中最新一条，点它就应粘贴。鼠标粘贴关掉面板后，双击收尾那一下会点穿到下面的窗口，必须先挡住再关。
 - **上下键连发必须自己做。** 非激活浮层往往收不到系统按键连发；把按下吞掉后系统也可能不再连发。必须在按下时记下方向、按系统连发延迟/间隔自己连续移动，抬起、键已松开或关掉面板时停。系统连发事件若仍到达则丢掉，避免跳两格。不要为了连发把本应用切到前台。预览打开时按键走临时热键，热键只响一次、不会连发，必须从这条路径同样启动按住连走；不要为了连发把焦点抢回列表。热键、预览窗、列表可能同时收到第一次按下，已按住则不再走步。
-- **历史面板尺寸固定。** 不要加可缩放；每次打开都用规定默认尺寸。列表可滚，不要显示滚动条。
+- **历史面板尺寸固定。** 不要加可缩放；每次打开都用规定默认尺寸。列表可滚，不要显示滚动条。Mac 接鼠标时系统会无视「尽量隐藏」，必须强制永不显示；不要为了藏条去关掉滚轮。踩坑见 [docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)。
 - **点面板外必须立刻关掉。** 非激活浮层点回正在用的应用时往往不会失焦，不能靠「本应用失活 / 窗口失焦」来关，否则会一直挡屏幕；也不要用失活来关，否则一打开就会被关掉。必须在按下时看点击落点：面板、系统预览、菜单栏本图标内不关，其余立刻关。
 - **历史面板无标题栏。** 预览用系统 Quick Look（空格开关），禁止做常驻预览栏，禁止改成自绘预览。打开必须让系统预览真正出画；不要为了收键把焦点抢回来，否则预览会空白。预览打开期间用临时热键收空格、Esc 和上下键，因为按键不会回到历史列表。预览必须是小窗。系统预览换内容时会自己撑大，最小/最大尺寸拦不住程序化改尺寸；必须在将要变大时直接拦回小窗，换一条后也要立刻压回。禁止为了防闪而放弃限尺寸。系统预览自己缩放时不要当成「用户在拖」而跳过压回。上下键可能同时走到热键/预览窗/列表，必须合成一次；热键不会连发，按住必须接到同一套按住连走，且不得把焦点抢回列表。踩坑与验收见 [docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)。
 - **外框通透玻璃，搜索和列表同一块实底。** 不要用雾面材质冒充玻璃。搜索框不要单独加描边或另一套底色；焦点用插入光标即可。列表仍是内容层实底，字必须在干净底上。
@@ -126,7 +126,7 @@ open /Applications/NeatPaste.app
 ## 文档导航
 
 - [docs/PRODUCT_CONTRACT.md](docs/PRODUCT_CONTRACT.md)：改、评审或排查面板、粘贴、历史保留、收录探测、预览、去重、面板位置、快捷键默认值或「明确不做」范围前**必读**。不读会把已钉死的体验改掉。
-- [docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，给搜索单独加粗框，或把外框做成雾面块。
+- [docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
 - [docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
 - [../../_standards/swift.md](../../_standards/swift.md)：改本仓库代码、工程或验证方式前**必读**。不读会偏离 Swift 6 并发基线和覆盖安装闭环。
 - [../../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md](../../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md)：改菜单栏生命周期、浮层、退出拦截、系统剪贴板收录/写回或本机冒烟日志前**必读**。不读会在新系统上被自动退出，或漏收刚复制的内容。

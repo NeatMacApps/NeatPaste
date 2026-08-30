@@ -1,47 +1,109 @@
 #!/usr/bin/env python3
-"""生成菜单栏回形针模板图（18px / 36px）。
+"""生成 NeatPaste 菜单栏双键帽模板图（18px / 36px）。
 
-从应用图标的回形针语义提炼的小尺寸重绘：双层嵌套圆角环、38° 斜放。
-输出纯黑主体 + 全透明背景的 RGBA PNG，供 MenuBarIcon.imageset 使用。
-依赖：Pillow（pip3 install --break-system-packages pillow numpy）
+菜单栏图标从应用图标的双键帽关系重绘：前层保留 ⌘，后层在交叠区域的上半段断开，
+只从右侧和下侧露出轮廓。输出纯黑主体与全透明背景的 RGBA PNG，供 MenuBarIcon.imageset 使用。
+依赖：Pillow（pip3 install --break-system-packages pillow）
 """
+
+from __future__ import annotations
+
+from pathlib import Path
+
 from PIL import Image, ImageDraw
 
-def make_clip(S: int, rot: float = 38, W: float = 40, H: float = 88,
-              sw: float = 9, gap: float = 7.5) -> Image.Image:
-    """在高分辨率画布 S×S 上画双层圆角环并旋转。参数为 100 单位制。"""
-    img = Image.new('L', (S, S), 0)
-    d = ImageDraw.Draw(img)
-    u = S / 100
-    Wp, Hp, swp, gp = W * u, H * u, sw * u, gap * u
-    x0, y0 = (S - Wp) / 2, (S - Hp) / 2
-    # 外环
-    d.rounded_rectangle([x0, y0, x0 + Wp, y0 + Hp], radius=Wp / 2,
-                        outline=255, width=max(1, int(swp)))
-    # 内环
-    ix0, iy0 = x0 + swp + gp, y0 + swp + gp
-    iW, iH = Wp - 2 * (swp + gp), Hp - 2 * (swp + gp)
-    if iW > 2 and iH > 2:
-        d.rounded_rectangle([ix0, iy0, ix0 + iW, iy0 + iH],
-                            radius=min(Wp / 2, iW / 2), outline=255,
-                            width=max(1, int(swp * 0.9)))
-    return img.rotate(rot, resample=Image.BICUBIC, expand=False)
+
+def _scaled_box(values: tuple[float, float, float, float], unit: float) -> tuple[int, int, int, int]:
+    """把 36 单位画布中的矩形换算为高分辨率像素。"""
+    x0, y0, x1, y1 = values
+    return (
+        round(x0 * unit),
+        round(y0 * unit),
+        round(x1 * unit),
+        round(y1 * unit),
+    )
 
 
-def export(master: Image.Image, px: int, box: int, path: str) -> None:
-    """按 px 画布、box 主体居中导出纯黑模板 PNG。"""
-    t = master.resize((box, box), Image.LANCZOS)
-    canvas = Image.new('L', (px, px), 0)
-    canvas.paste(t, ((px - box) // 2, (px - box) // 2))
-    rgba = Image.merge('RGBA', [Image.new('L', (px, px), 0)] * 3 + [canvas])
+def _draw_command_glyph(draw: ImageDraw.ImageDraw, unit: float) -> None:
+    """绘制适合菜单栏小尺寸的四环 ⌘ 符号。"""
+    stroke = max(1, round(1.65 * unit))
+    centers = ((9.35, 11.45), (18.05, 11.45), (9.35, 18.55), (18.05, 18.55))
+
+    draw.line(
+        [(round(9.35 * unit), round(15 * unit)), (round(18.05 * unit), round(15 * unit))],
+        fill=255,
+        width=stroke,
+    )
+    draw.line(
+        [(round(13.7 * unit), round(11.45 * unit)), (round(13.7 * unit), round(18.55 * unit))],
+        fill=255,
+        width=stroke,
+    )
+
+    radius = 2.2 * unit
+    for center_x, center_y in centers:
+        draw.ellipse(
+            (
+                round(center_x * unit - radius),
+                round(center_y * unit - radius),
+                round(center_x * unit + radius),
+                round(center_y * unit + radius),
+            ),
+            outline=255,
+            width=stroke,
+        )
+
+
+def make_clip(size: int) -> Image.Image:
+    """在高分辨率画布上重绘双键帽菜单栏模板图。"""
+    image = Image.new("L", (size, size), 0)
+    draw = ImageDraw.Draw(image)
+    unit = size / 36
+
+    # 后层只保留右侧与下侧轮廓，交叠区域的上半段不画线。
+    rear_points = (
+        (30.3, 12.0),
+        (31.5, 12.2),
+        (32.6, 13.1),
+        (33.1, 14.5),
+        (33.2, 16.2),
+        (33.2, 27.3),
+        (33.1, 28.7),
+        (32.4, 30.0),
+        (31.0, 31.0),
+        (29.0, 31.5),
+        (18.2, 31.5),
+    )
+    draw.line(
+        [(round(x * unit), round(y * unit)) for x, y in rear_points],
+        fill=255,
+        width=max(1, round(2 * unit)),
+        joint="curve",
+    )
+
+    # 前层键帽是黑色外环，内页保持透明。
+    outer = _scaled_box((2.75, 3.0, 26.25, 27.8), unit)
+    inner = _scaled_box((5.10, 5.45, 23.90, 25.05), unit)
+    draw.rounded_rectangle(outer, radius=round(4.7 * unit), fill=255)
+    draw.rounded_rectangle(inner, radius=round(3.15 * unit), fill=0)
+    _draw_command_glyph(draw, unit)
+
+    # 高分辨率旋转后缩小，边缘只通过 alpha 抗锯齿，不引入灰色像素。
+    return image.rotate(-8, resample=Image.BICUBIC, expand=False)
+
+
+def export(master: Image.Image, pixel_size: int, path: Path) -> None:
+    """把模板图缩放到目标尺寸并输出 RGBA PNG。"""
+    alpha = master.resize((pixel_size, pixel_size), Image.Resampling.LANCZOS)
+    transparent_rgb = Image.new("L", (pixel_size, pixel_size), 0)
+    rgba = Image.merge("RGBA", (transparent_rgb, transparent_rgb, transparent_rgb, alpha))
     rgba.save(path)
 
 
-if __name__ == '__main__':
-    import pathlib
-    here = pathlib.Path(__file__).resolve().parent
-    imageset = here.parent.parent.parent / 'NeatPaste/Assets.xcassets/MenuBarIcon.imageset'
-    master = make_clip(1152)
-    export(master, 18, 17, imageset / 'menubar.png')
-    export(master, 36, 34, imageset / 'menubar@2x.png')
-    print(f'已生成：{imageset}/menubar.png 与 menubar@2x.png')
+if __name__ == "__main__":
+    here = Path(__file__).resolve().parent
+    imageset = here.parent.parent.parent / "NeatPaste/Assets.xcassets/MenuBarIcon.imageset"
+    imageset.mkdir(parents=True, exist_ok=True)
+    export(make_clip(1152), 18, imageset / "menubar.png")
+    export(make_clip(1152), 36, imageset / "menubar@2x.png")
+    print(f"已生成：{imageset}/menubar.png 与 menubar@2x.png")

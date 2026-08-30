@@ -234,9 +234,7 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- macOS clipboard history: keyboard-first panel, text & image thumbnails.
-- History kept 7 days, stored locally only; no account, no sync, no network.
-- First public release. Signed, notarized, auto-updates via Sparkle.
+- History list no longer shows a scrollbar when a mouse is connected. Wheel, trackpad, and arrow keys still scroll.
 EOF
 
 appcast_dir="${work_dir}/appcast"
