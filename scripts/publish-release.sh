@@ -324,8 +324,24 @@ if ! gh release view "${tag}" --repo "${REPO}" >/dev/null 2>&1; then
     --title "${tag}" --notes-file "${release_notes_file}" \
     || die "创建 GitHub Release 失败"
 fi
-gh release upload "${tag}" --repo "${REPO}" "${dmg_path}" "${update_zip_path}" --clobber \
-  || die "上传 Release 附件失败"
+gh release upload "${tag}" --repo "${REPO}" "${dmg_path}" --clobber \
+  || die "上传 dmg 失败"
+gh release upload "${tag}" --repo "${REPO}" "${update_zip_path}" --clobber \
+  || die "上传 zip 失败"
+# 两条一起传时，GitHub 可能回报成功但只留下其中一个。逐个传完必须回读确认。
+python3 - "${REPO}" "${tag}" "${APP_NAME}-${version}.dmg" "${APP_NAME}-${version}.zip" <<'PY' \
+  || die "GitHub Release 附件回读失败：dmg 或 zip 不在发行页上"
+import json, subprocess, sys
+repo, tag, *need = sys.argv[1:]
+raw = subprocess.check_output(
+    ["gh", "api", f"repos/{repo}/releases/tags/{tag}"],
+    text=True,
+)
+names = {a["name"] for a in json.loads(raw).get("assets", []) if a.get("state") == "uploaded"}
+missing = [n for n in need if n not in names]
+if missing:
+    raise SystemExit("missing " + ", ".join(missing))
+PY
 
 log_step "更新公开 appcast（随源码仓发布）"
 ditto "${appcast_dir}/appcast.xml" appcast.xml
