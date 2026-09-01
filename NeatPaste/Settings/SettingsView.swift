@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @ObservedObject private var hotkeyManager = HotkeyManager.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
+    @Bindable private var preferences = AppPreferences.shared
     @FocusState private var focusedControl: Control?
 
     private enum Control: Hashable {
@@ -11,12 +12,14 @@ struct SettingsView: View {
         case restore
         case launchAtLogin
         case openLoginSettings
+        case menuBarIcon
     }
 
     var body: some View {
         Form {
             hotkeySection
             launchAtLoginSection
+            menuBarIconSection
             ignoredAppsSection
         }
         .formStyle(.grouped)
@@ -113,6 +116,21 @@ struct SettingsView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+        }
+    }
+
+    private var menuBarIconSection: some View {
+        Section(String(localized: "settings.menuBarIcon.section")) {
+            Toggle(
+                String(localized: "settings.menuBarIcon.toggle"),
+                isOn: Binding(
+                    get: { preferences.isMenuBarIconVisible },
+                    set: { preferences.setMenuBarIconVisible($0) }
+                )
+            )
+            .focused($focusedControl, equals: .menuBarIcon)
+            .focusEffectDisabled()
+            .overlay { focusRing(for: .menuBarIcon, cornerRadius: 6) }
         }
     }
 

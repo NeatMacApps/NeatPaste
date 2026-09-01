@@ -1,4 +1,6 @@
 import AppKit
+import MacKitCore
+import MacKitLifecycle
 import SwiftUI
 
 @MainActor
@@ -10,9 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var statusItemController: StatusItemController?
     private var commaMonitor: Any?
     private let appUpdater = AppUpdater()
-
-    /// 置为 true 时允许 `applicationShouldTerminate` 放行；区分用户点击「退出」与系统自动终止。
-    private var allowTermination = false
+    private let terminationGuard = TerminationGuard()
 
     let history: InMemoryHistoryStore
     let clipboardMonitor: ClipboardMonitor
@@ -30,6 +30,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppDelegate.shared = self
         clipboardMonitor.start()
+        terminationGuard.isUpdateSessionInProgress = { [weak self] in
+            self?.appUpdater.updater.sessionInProgress ?? false
+        }
 
         let panel = HistoryPanel(model: panelModel)
         panel.orderOut(nil)
@@ -56,6 +59,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         panel.additionalKeptFrames = { [weak statusItemController] in
             statusItemController?.buttonScreenFrame().map { [$0] } ?? []
         }
+        applyMenuBarIconVisibility()
 
         HotkeyManager.shared.onHotKey = { [weak self] in
             self?.togglePanel()
@@ -70,18 +74,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
             return event
         }
+
+        if MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: AppPreferences.shared.isMenuBarIconVisible) {
+            showRecoveryWindow()
+        }
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        if allowTermination { return .terminateNow }
-        // Sparkle「安装并重新打开」会发 terminate；更新会话进行中必须放行，
-        // 否则按钮无响应，安装永远不会开始。
-        if appUpdater.updater.sessionInProgress { return .terminateNow }
-        return .terminateCancel
+        terminationGuard.shouldTerminate() ? .terminateNow : .terminateCancel
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         false
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // 图标隐藏时出示恢复窗；不要开关历史面板——点外面关的浮层不能当恢复面。
+        if MenuBarReopenPolicy.presentation(
+            iconVisible: AppPreferences.shared.isMenuBarIconVisible,
+            isReopenOrLaunch: true
+        ) == .showRecoveryWindow {
+            showRecoveryWindow()
+        }
+        return true
     }
 
     func applicationWillTerminate(_ notification: Notification) {
@@ -94,7 +109,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// 用户主动退出：先放行再 terminate。
     func requestTermination(terminate: () -> Void = { NSApplication.shared.terminate(nil) }) {
-        allowTermination = true
+        terminationGuard.allowTermination = true
         terminate()
     }
 
@@ -116,5 +131,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             await panelModel.reload()
             panel.showPanel(frame: frame)
         }
+    }
+
+    func applyMenuBarIconVisibility() {
+        statusItemController?.isVisible = AppPreferences.shared.isMenuBarIconVisible
+    }
+
+    /// 出示恢复窗口前先关掉历史面板，避免激活本应用后粘贴贴到自己身上。
+    func showRecoveryWindow() {
+        panel?.hidePanel()
+        RecoveryWindowController.shared.show()
+    }
+
+    func checkForUpdates() {
+        appUpdater.checkForUpdates(nil)
     }
 }

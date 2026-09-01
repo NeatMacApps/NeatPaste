@@ -11,6 +11,12 @@ final class StatusItemController: NSObject {
     private let onCheckForUpdates: () -> Void
     private let onQuit: () -> Void
 
+    /// 显隐菜单栏图标。藏起来会触发系统 terminate，必须由退出守卫拦住。
+    var isVisible: Bool {
+        get { statusItem.isVisible }
+        set { statusItem.isVisible = newValue }
+    }
+
     init(
         onOpenPanel: @escaping () -> Void,
         onTogglePanel: @escaping () -> Void,
@@ -68,6 +74,13 @@ final class StatusItemController: NSObject {
         )
         settingsItem.target = self
 
+        let hideIconItem = NSMenuItem(
+            title: String(localized: "menu.hideMenuBarIcon"),
+            action: #selector(hideMenuBarIcon(_:)),
+            keyEquivalent: ""
+        )
+        hideIconItem.target = self
+
         let aboutItem = NSMenuItem(
             title: String(localized: "menu.about"),
             action: #selector(openAbout(_:)),
@@ -94,6 +107,7 @@ final class StatusItemController: NSObject {
             settingsItem,
             .separator(),
             launchAtLoginItem,
+            hideIconItem,
             .separator(),
             checkForUpdatesItem,
             aboutItem,
@@ -140,6 +154,11 @@ final class StatusItemController: NSObject {
     }
 
     @objc
+    private func hideMenuBarIcon(_ sender: Any?) {
+        AppPreferences.shared.setMenuBarIconVisible(false)
+    }
+
+    @objc
     private func openAbout(_ sender: Any?) {
         NSApp.activate(ignoringOtherApps: true)
         NSApp.orderFrontStandardAboutPanel(options: [
@@ -160,9 +179,13 @@ final class StatusItemController: NSObject {
 
     private func refreshLaunchAtLoginState() {
         LaunchAtLoginManager.shared.refresh()
-        launchAtLoginItem.state = LaunchAtLoginManager.shared.isEnabled ? .on : .off
-        if LaunchAtLoginManager.shared.requiresApproval {
+        switch LaunchAtLoginManager.shared.status {
+        case .on:
+            launchAtLoginItem.state = .on
+        case .needsApproval:
             launchAtLoginItem.state = .mixed
+        case .off:
+            launchAtLoginItem.state = .off
         }
     }
 }

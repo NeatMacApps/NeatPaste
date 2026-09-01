@@ -73,6 +73,24 @@
         }
       }
     },
+    "menu.hideMenuBarIcon": {
+      "comment": "Status menu hide menu bar icon",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hide Menu Bar Icon"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "隐藏菜单栏图标"
+          }
+        }
+      }
+    },
     "menu.checkForUpdates": {
       "comment": "Status menu check for updates",
       "extractionState": "manual",
@@ -321,6 +339,60 @@
           "stringUnit": {
             "state": "translated",
             "value": "搜索"
+          }
+        }
+      }
+    },
+    "recovery.running.detail": {
+      "comment": "Recovery window running explanation",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Clipboard history is still being recorded. Show the menu bar icon to get the panel back."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "剪贴板历史仍在收录。打开「显示菜单栏图标」即可重新唤出面板。"
+          }
+        }
+      }
+    },
+    "recovery.running.title": {
+      "comment": "Recovery window running status",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NeatPaste is still running"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NeatPaste 仍在运行"
+          }
+        }
+      }
+    },
+    "recovery.title": {
+      "comment": "Recovery window title",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NeatPaste"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NeatPaste"
           }
         }
       }
@@ -699,6 +771,42 @@
           "stringUnit": {
             "state": "translated",
             "value": "登录时打开 NeatPaste"
+          }
+        }
+      }
+    },
+    "settings.menuBarIcon.section": {
+      "comment": "Menu bar icon section",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Menu Bar"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "菜单栏"
+          }
+        }
+      }
+    },
+    "settings.menuBarIcon.toggle": {
+      "comment": "Show menu bar icon toggle",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show Menu Bar Icon"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示菜单栏图标"
           }
         }
       }

@@ -15,7 +15,11 @@ final class AppPreferences {
         static let hotkeyEnabled = "hotkey.enabled"
         static let ignoredAppBundleIDs = "ignore.bundleIDs"
         static let hotkeyDefaultGeneration = "hotkey.defaultGeneration"
+        static let menuBarIconVisible = "menuBar.iconVisible"
     }
+
+    /// 菜单栏图标出厂默认显示。
+    nonisolated static let menuBarIconVisibleDefault = true
 
     /// 出厂默认快捷键代数。从 1（⌘⇧V）升到 2（⌘⌥V）时，只覆盖仍停在旧出厂值的安装，不覆盖用户改过的组合。
     nonisolated static let currentHotkeyDefaultGeneration = 2
@@ -40,11 +44,33 @@ final class AppPreferences {
         }
     }
 
+    /// 菜单栏图标是否显示。缺省为显示；用键是否存在判断，避免把空当成关。
+    var isMenuBarIconVisible: Bool {
+        didSet {
+            UserDefaults.standard.set(isMenuBarIconVisible, forKey: Key.menuBarIconVisible)
+        }
+    }
+
     private init() {
         ignoredAppBundleIDs = UserDefaults.standard.stringArray(forKey: Key.ignoredAppBundleIDs) ?? []
         UserDefaults.standard.register(defaults: [
-            Key.hotkeyEnabled: true
+            Key.hotkeyEnabled: true,
+            Key.menuBarIconVisible: Self.menuBarIconVisibleDefault
         ])
+        if UserDefaults.standard.object(forKey: Key.menuBarIconVisible) == nil {
+            isMenuBarIconVisible = Self.menuBarIconVisibleDefault
+        } else {
+            isMenuBarIconVisible = UserDefaults.standard.bool(forKey: Key.menuBarIconVisible)
+        }
+    }
+
+    /// 显隐菜单栏图标。关掉时必须出示恢复窗口，不能只把图标拿掉。
+    func setMenuBarIconVisible(_ visible: Bool) {
+        isMenuBarIconVisible = visible
+        AppDelegate.shared?.applyMenuBarIconVisibility()
+        if !visible {
+            AppDelegate.shared?.showRecoveryWindow()
+        }
     }
 
     func saveHotkey(keyCode: UInt32, modifiers: UInt32) {

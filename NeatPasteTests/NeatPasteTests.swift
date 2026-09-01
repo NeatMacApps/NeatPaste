@@ -1,4 +1,5 @@
 import AppKit
+import MacKitCore
 import XCTest
 @testable import NeatPaste
 @preconcurrency import Carbon
@@ -23,9 +24,17 @@ final class HistoryRetentionTests: XCTestCase {
     }
 
     @MainActor
+    func test_菜单栏图标默认显示() {
+        XCTAssertEqual(AppPreferences.Key.menuBarIconVisible, "menuBar.iconVisible")
+        XCTAssertTrue(AppPreferences.menuBarIconVisibleDefault)
+    }
+
+    @MainActor
     func test_历史面板不可调整大小() {
         let panel = HistoryPanel(model: HistoryPanelModel(history: InMemoryHistoryStore()))
         XCTAssertFalse(panel.styleMask.contains(.resizable))
+        XCTAssertTrue(panel.styleMask.contains(.nonactivatingPanel))
+        XCTAssertFalse(panel.canBecomeMain)
         XCTAssertEqual(panel.minSize, AppPreferences.panelSize)
         XCTAssertEqual(panel.maxSize, AppPreferences.panelSize)
     }
@@ -437,6 +446,31 @@ final class AppDelegateTests: XCTestCase {
         }
         XCTAssertTrue(didRequestTermination)
         XCTAssertEqual(delegate.applicationShouldTerminate(NSApplication.shared), .terminateNow)
+        XCTAssertFalse(delegate.applicationShouldTerminateAfterLastWindowClosed(NSApplication.shared))
+    }
+}
+
+final class MenuBarRecoveryPolicyTests: XCTestCase {
+    func test_图标隐藏时再次打开必须出示恢复窗() {
+        XCTAssertEqual(
+            MenuBarReopenPolicy.presentation(iconVisible: false, isReopenOrLaunch: true),
+            .showRecoveryWindow
+        )
+        XCTAssertTrue(MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: false))
+    }
+
+    func test_图标可见时再次打开不要用恢复窗顶替() {
+        XCTAssertEqual(
+            MenuBarReopenPolicy.presentation(iconVisible: true, isReopenOrLaunch: true),
+            .none
+        )
+        XCTAssertFalse(MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: true))
+    }
+
+    func test_待批准不能当成开机自启已打开() {
+        XCTAssertTrue(LaunchAtLoginStatus.on.isEffectivelyEnabled)
+        XCTAssertFalse(LaunchAtLoginStatus.needsApproval.isEffectivelyEnabled)
+        XCTAssertFalse(LaunchAtLoginStatus.off.isEffectivelyEnabled)
     }
 }
 

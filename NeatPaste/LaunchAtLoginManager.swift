@@ -1,48 +1,47 @@
 import Combine
-import Foundation
-import ServiceManagement
+import MacKitCore
+import MacKitLaunchAtLogin
 
 @MainActor
 final class LaunchAtLoginManager: ObservableObject {
     static let shared = LaunchAtLoginManager()
 
-    @Published private(set) var status = SMAppService.mainApp.status
+    @Published private(set) var status: LaunchAtLoginStatus = .off
     @Published private(set) var lastErrorMessage: String?
 
-    private init() {}
+    private let service = LaunchAtLoginService()
 
-    var isEnabled: Bool {
-        status == .enabled || status == .requiresApproval
-    }
+    /// 只有系统真正会在登录时拉起才算开。待批准不能算已启用。
+    var isEnabled: Bool { status.isEffectivelyEnabled }
 
-    var requiresApproval: Bool {
-        status == .requiresApproval
+    var requiresApproval: Bool { status == .needsApproval }
+
+    private init() {
+        refresh()
     }
 
     func setEnabled(_ enabled: Bool) {
-        do {
-            if enabled {
-                if SMAppService.mainApp.status == .notRegistered || SMAppService.mainApp.status == .notFound {
-                    try SMAppService.mainApp.register()
-                }
-            } else if SMAppService.mainApp.status != .notRegistered {
-                try SMAppService.mainApp.unregister()
-            }
-
-            lastErrorMessage = nil
+        if requiresApproval, enabled {
+            openSystemSettings()
             refresh()
-        } catch {
+            return
+        }
+        switch service.setEnabled(enabled) {
+        case .success(let status):
+            self.status = status
+            lastErrorMessage = nil
+        case .failure:
             refresh()
             lastErrorMessage = String(localized: "settings.launchAtLogin.failed")
-            print("[NeatPaste] 开机自启动更新失败：\(error)")
         }
     }
 
     func refresh() {
-        status = SMAppService.mainApp.status
+        service.refresh()
+        status = service.status
     }
 
     func openSystemSettings() {
-        SMAppService.openSystemSettingsLoginItems()
+        service.openSystemSettings()
     }
 }

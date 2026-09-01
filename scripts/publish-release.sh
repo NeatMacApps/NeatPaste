@@ -234,7 +234,10 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- Refreshed the menu-bar icon with the NeatPaste overlapping keycap mark.
+- Launch at login (pending approval is not shown as on)
+- Hide menu bar icon; recovery window to restore it (history panel is not the recovery surface)
+- Check for Updates in the menu
+- Clicking outside the history panel dismisses it
 EOF
 
 appcast_dir="${work_dir}/appcast"
