@@ -2,8 +2,8 @@
 # NeatPaste macOS 一条命令发版：
 #   Release 构建 -> 重签 Sparkle 内嵌件 -> Developer ID 签名自检 -> 苹果公证 -> 装订票据
 #   -> 生成 Sparkle 签名更新包与 appcast -> 打 dmg -> 公证 dmg -> 装订
-#   -> 提交 / 打 tag / 推送 -> GitHub Release（dmg + 更新 zip）-> appcast 入库
-#   -> 匿名终检
+#   -> 提交 / 打 tag / 推送 -> GitHub Release（先建空再传 dmg/zip）-> appcast 入库
+#   -> Homebrew cask -> 匿名终检
 #
 # 用法：
 #   scripts/publish-release.sh              完整发版
@@ -27,6 +27,8 @@ readonly APP_NAME="NeatPaste"
 readonly REPO="NeatMacApps/NeatPaste"
 readonly REPO_WEB="https://github.com/${REPO}"
 readonly FEED_URL="https://raw.githubusercontent.com/${REPO}/main/appcast.xml"
+readonly CASK_NAME="neatpaste"
+readonly TAP_REPO="x0c/homebrew-tap"
 # 本地私有配置（不入库）：公证密钥三件套 + Sparkle 签名账号；同名环境变量优先。
 local_env="${ROOT_DIR}/scripts/publish-local.env"
 [[ -f "${local_env}" ]] && source "${local_env}"
@@ -314,20 +316,16 @@ git push origin main
 git push origin "${tag}"
 
 # ---------- 7. GitHub Release ----------
-log_step "发布 GitHub Release（dmg + 更新 zip）"
+# 禁止 create 时带附件：uploads.github.com 会 404，Release 可能留下空壳或根本不存在。
+# 先建空 Release，再用 upload --clobber 传文件（可重复执行）。
+log_step "发布 GitHub Release（先建空再传 dmg + 更新 zip）"
 if ! gh release view "${tag}" --repo "${REPO}" >/dev/null 2>&1; then
   gh release create "${tag}" --repo "${REPO}" \
     --title "${tag}" --notes-file "${release_notes_file}" \
-    "${dmg_path}" "${update_zip_path}" \
     || die "创建 GitHub Release 失败"
-else
-  # 同名附件先删旧再传，保证可重复执行
-  for asset in "${APP_NAME}-${version}.dmg" "${APP_NAME}-${version}.zip"; do
-    gh release delete-asset "${tag}" "${asset}" --repo "${REPO}" --yes >/dev/null 2>&1 || true
-  done
-  gh release upload "${tag}" --repo "${REPO}" "${dmg_path}" "${update_zip_path}" --clobber \
-    || die "上传 Release 附件失败"
 fi
+gh release upload "${tag}" --repo "${REPO}" "${dmg_path}" "${update_zip_path}" --clobber \
+  || die "上传 Release 附件失败"
 
 log_step "更新公开 appcast（随源码仓发布）"
 ditto "${appcast_dir}/appcast.xml" appcast.xml
@@ -337,7 +335,59 @@ if ! git diff --cached --quiet; then
   git push origin main
 fi
 
-# ---------- 8. 匿名终检 ----------
+# ---------- 8. Homebrew cask ----------
+log_step "更新 Homebrew cask（防版本回退）"
+dmg_sha="$(shasum -a 256 "${dmg_path}" | awk '{print $1}')"
+tap_dir="${work_dir}/homebrew-tap"
+git clone --depth 20 "git@github.com:${TAP_REPO}.git" "${tap_dir}"
+cask_file="${tap_dir}/Casks/${CASK_NAME}.rb"
+existing_version=""
+if [[ -f "${cask_file}" ]]; then
+  existing_version="$(python3 - "${cask_file}" <<'PY'
+import re, sys
+text = open(sys.argv[1], encoding="utf-8").read()
+m = re.search(r'version\s+"([^"]+)"', text)
+print(m.group(1) if m else "")
+PY
+)"
+fi
+if [[ -n "${existing_version}" ]]; then
+  python3 - "${existing_version}" "${version}" <<'PY' || die "拒绝回退 Homebrew 配方：线上 ${existing_version}，本次 ${version}"
+import sys
+def parse(v):
+    parts = []
+    for piece in v.split("."):
+        n = ""
+        for ch in piece:
+            if ch.isdigit():
+                n += ch
+            else:
+                break
+        parts.append(int(n or "0"))
+    return tuple(parts)
+old, new = sys.argv[1], sys.argv[2]
+raise SystemExit(0 if parse(new) >= parse(old) else 1)
+PY
+fi
+python3 - "${cask_file}" "${version}" "${dmg_sha}" <<'PY'
+import pathlib, re, sys
+path, version, sha = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+text = path.read_text(encoding="utf-8")
+text, n1 = re.subn(r'version\s+"[^"]+"', f'version "{version}"', text, count=1)
+text, n2 = re.subn(r'sha256\s+"[^"]+"', f'sha256 "{sha}"', text, count=1)
+if n1 != 1 or n2 != 1:
+    raise SystemExit("Homebrew 配方缺少 version 或 sha256 行")
+path.write_text(text, encoding="utf-8")
+PY
+git -C "${tap_dir}" add "Casks/${CASK_NAME}.rb"
+if git -C "${tap_dir}" diff --cached --quiet; then
+  echo "Homebrew 配方已是 ${version}，无需更新"
+else
+  git -C "${tap_dir}" -c core.hooksPath=/dev/null commit -m "${CASK_NAME} ${version}"
+  git -C "${tap_dir}" push origin HEAD
+fi
+
+# ---------- 9. 匿名终检 ----------
 log_step "匿名下载与更新清单终检"
 curl -fsSL "${FEED_URL}" -o "${work_dir}/published-appcast.xml" \
   || die "公开 appcast 无法匿名下载"
@@ -350,12 +400,15 @@ curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/${APP_NAME}-${versi
   || die "Sparkle 更新包无法匿名下载"
 curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/${APP_NAME}-${version}.dmg" -o /dev/null \
   || die "首次安装 dmg 无法匿名下载"
+curl -fsSL "https://raw.githubusercontent.com/${TAP_REPO}/HEAD/Casks/${CASK_NAME}.rb" \
+  | grep -q "version \"${version}\"" \
+  || die "Homebrew 配方未指向 ${version}"
 
 log_step "发布完成"
 cat <<EOF
 版本：${tag}（内部构建号 ${build_number}）
 首次安装：${REPO_WEB}/releases/latest
-一键安装：brew tap x0c/tap && brew install --cask neatpaste
+一键安装：brew tap x0c/tap && brew install --cask ${CASK_NAME}
 自动更新：${FEED_URL}
 状态：安装包可匿名下载，已完成 Sparkle 签名、Developer ID 签名、苹果公证与票据装订
 EOF
