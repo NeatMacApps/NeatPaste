@@ -20,7 +20,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 ## 明确不做
 
-钉住、收藏、云同步、AI 整理、跨平台客户端、Mac App Store 版、把富文本/图片降成纯文本。第一波也不做自动更新安装包渠道（无 Sparkle、无公证 dmg）。
+钉住、收藏、云同步、AI 整理、跨平台客户端、Mac App Store 版、把富文本/图片降成纯文本。
 
 ## 钉死的体验
 
@@ -28,10 +28,11 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 ## 基线豁免（第一波）
 
-合法暂缓（尚未对外发行，一旦发公开 Release 必须补齐）：
+合法暂缓（仅限不对外收集数据的条目，一旦发公开 Release 必须补齐）：
 
-- 不适用「自行分发必须带应用内自更新 / 正式发行必须带已签名 dmg」：第一波只做到本机可编译、可装进「应用程序」、可用快捷键唤出；对外发行渠道未开。
 - 不适用隐私清单：不收集、不上报用户数据。
+
+**发行链路（v1.0.0 起）已具备，不再是豁免**：Developer ID 签名 + 公证 dmg + Sparkle 应用内自更新 + Homebrew 一键安装；对外开源的 Mac 应用不允许「先开源、后补发行链路」（2026-08-17 裁定为硬要求）。
 
 **下列不是豁免，是第一波欠账，必须尽快补，不得写成「下次改图标再做」：**
 
@@ -126,7 +127,7 @@ xcodebuild -project NeatPaste.xcodeproj -scheme NeatPaste -configuration Debug \
 scripts/publish-release.sh
 ```
 
-首次安装渠道：GitHub Release 的公证 dmg 与 Homebrew（`x0c/tap` 的 `neatpaste` cask）；自动更新源为仓库根 `appcast.xml`（raw 地址）。版本号双写于 `Configuration/Base.xcconfig` 与 `project.yml`，发版脚本会比对一致性并拦截回退。
+首次安装渠道：GitHub Release 的公证 dmg 与 Homebrew（`x0c/tap` 的 `neatpaste` cask）；自动更新源为仓库根 `appcast.xml`（raw 地址）。版本号双写于 `Configuration/Base.xcconfig` 与 `project.yml`，发版脚本会比对一致性并拦截回退。发版脚本会同步 Homebrew 配方；GitHub 发行页必须先建空再传安装包——一条命令带附件会在上传接口返回 404，发行页可能根本建不出来。
 
 覆盖安装必须先删旧包再整包复制，不能往已存在的应用里合并：
 

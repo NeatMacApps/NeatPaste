@@ -6,6 +6,22 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatPaste</title>
         <item>
+            <title>1.0.4</title>
+            <pubDate>Tue, 01 Sep 2026 22:20:30 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatPaste</link>
+            <sparkle:version>5</sparkle:version>
+            <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatPaste 1.0.4
+
+- Launch at login (pending approval is not shown as on)
+- Hide menu bar icon; recovery window to restore it (history panel is not the recovery surface)
+- Check for Updates in the menu
+- Clicking outside the history panel dismisses it
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.4/NeatPaste-1.0.4.zip" length="4508381" type="application/octet-stream" sparkle:edSignature="KESwtCj/CxuuGNnDguGocvc4VBOuEXGBQveqBl3PqVokOI4UXntXx5oI8C6nFTWuudtJaMw0+lXcRe4YeCXkDQ=="/>
+        </item>
+        <item>
             <title>1.0.1</title>
             <pubDate>Sat, 22 Aug 2026 12:00:24 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatPaste</link>
@@ -26,6 +42,6 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: VNyIWGHPs1qq5WPL6ZDbWKV8Z3sXaHjU3ITtw4TF3MrbNcDapz+FKQrVjeBJQnGstM21wbLwgPapMouw+wKLBQ==
-length: 1777
+edSignature: 4E4dyEBEAvszaNVggYCuSRFbYTupXq/JUqWyLBZ9c8zYGCEHLJQYfix6S/6rrheL6FkR5YvGVTA7aLIn14q4AQ==
+length: 2778
 -->
