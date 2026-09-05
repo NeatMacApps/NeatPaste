@@ -1,6 +1,7 @@
 import AppKit
 import MacKitCore
 import MacKitLifecycle
+import MacKitUpdater
 import SwiftUI
 
 @MainActor
@@ -11,7 +12,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var panel: HistoryPanel?
     private var statusItemController: StatusItemController?
     private var commaMonitor: Any?
-    private let appUpdater = AppUpdater()
+    private let appUpdater = SparkleUpdateChecker()
     private let terminationGuard = TerminationGuard()
 
     let history: InMemoryHistoryStore

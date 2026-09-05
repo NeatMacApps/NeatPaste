@@ -35,7 +35,6 @@
 		BC2C04201C9BA44B0E1FB126 /* MacKitCore in Frameworks */ = {isa = PBXBuildFile; productRef = 8E9F7252EBE8E3D6ACC15D3D /* MacKitCore */; };
 		C8E3308982B14A04DFC09DDE /* AccessibilityPermission.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6E805FA637CB43AB2A4D75A /* AccessibilityPermission.swift */; };
 		D1D96C8A1A0DC5CCABC1D18E /* PanelAnchor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EF062B50F0971EC301E14FC /* PanelAnchor.swift */; };
-		DE19B514C3AE0F2CF7B2C548 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2551CFA30153ED173F9C5D10 /* AppUpdater.swift */; };
 		DF618EFB1631CBFC5A4DA3A2 /* MacKitLaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 3A320A2106982294CA762DD3 /* MacKitLaunchAtLogin */; };
 		E21637E2D7D26A9BF3DB3025 /* MacKitOverlay in Frameworks */ = {isa = PBXBuildFile; productRef = 0D48BC226FE2BC2052553951 /* MacKitOverlay */; };
 		E7EF69246E57F8DC4E6A6616 /* MacKitLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = DA73972B148B3C48E421130B /* MacKitLifecycle */; };
@@ -60,7 +59,6 @@
 /* Begin PBXFileReference section */
 		071FF4472DC9FB9EC8E86841 /* AGENTS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = AGENTS.md; sourceTree = "<group>"; };
 		1D172D0DB586DAF5279EFBFE /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Base.xcconfig; sourceTree = "<group>"; };
-		2551CFA30153ED173F9C5D10 /* AppUpdater.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUpdater.swift; sourceTree = "<group>"; };
 		2AD4826731C85C371D05B941 /* StatusItemController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemController.swift; sourceTree = "<group>"; };
 		2E339B7D955F6954EE5C622F /* HistoryServing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryServing.swift; sourceTree = "<group>"; };
 		2ECFE30C0DF4364760351A2A /* HistoryPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryPanel.swift; sourceTree = "<group>"; };
@@ -226,7 +224,6 @@
 				98136E627BDB02B3C2D1AEFB /* AppDelegate.swift */,
 				B5676A87EB4EACAEAE7D9120 /* AppIcon.icon */,
 				DFBC0E853F35A5258D71BB73 /* AppPreferences.swift */,
-				2551CFA30153ED173F9C5D10 /* AppUpdater.swift */,
 				FF7C5B53C488B4AF955B3F50 /* Assets.xcassets */,
 				A316AAD9CCC68DAAD1D74B85 /* HotkeyManager.swift */,
 				2FF0DAABCEBCDD0722A2A88D /* Info.plist */,
@@ -395,7 +392,6 @@
 				C8E3308982B14A04DFC09DDE /* AccessibilityPermission.swift in Sources */,
 				AE52BA51BDE200574D8A15C0 /* AppDelegate.swift in Sources */,
 				016B5EC1C769C07F0F5F6B5F /* AppPreferences.swift in Sources */,
-				DE19B514C3AE0F2CF7B2C548 /* AppUpdater.swift in Sources */,
 				9E4B6874147B43A18F24A191 /* ArrowKeyRepeat.swift in Sources */,
 				5DC6FA38B8AB219B9422D34C /* ClipboardMonitor.swift in Sources */,
 				3AA751DFB39C24F4C29B59EF /* HistoryPanel.swift in Sources */,
