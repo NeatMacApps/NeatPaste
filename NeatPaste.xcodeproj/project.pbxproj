@@ -37,6 +37,7 @@
 		D1D96C8A1A0DC5CCABC1D18E /* PanelAnchor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5EF062B50F0971EC301E14FC /* PanelAnchor.swift */; };
 		DE19B514C3AE0F2CF7B2C548 /* AppUpdater.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2551CFA30153ED173F9C5D10 /* AppUpdater.swift */; };
 		DF618EFB1631CBFC5A4DA3A2 /* MacKitLaunchAtLogin in Frameworks */ = {isa = PBXBuildFile; productRef = 3A320A2106982294CA762DD3 /* MacKitLaunchAtLogin */; };
+		E21637E2D7D26A9BF3DB3025 /* MacKitUpdater in Frameworks */ = {isa = PBXBuildFile; productRef = 9707E0300A0E0FA5D3CD963C /* MacKitUpdater */; };
 		E7EF69246E57F8DC4E6A6616 /* MacKitLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = DA73972B148B3C48E421130B /* MacKitLifecycle */; };
 		E8CD710B0EE57AE45262AAC2 /* PasteboardCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4418C5903B2343B51475A739 /* PasteboardCapture.swift */; };
 		F3675AC65A0D53787C5FF965 /* MacKitLifecycle in Frameworks */ = {isa = PBXBuildFile; productRef = 10B6C07A95B1CE2CDD98F921 /* MacKitLifecycle */; };
@@ -116,6 +117,7 @@
 				BC2C04201C9BA44B0E1FB126 /* MacKitCore in Frameworks */,
 				DF618EFB1631CBFC5A4DA3A2 /* MacKitLaunchAtLogin in Frameworks */,
 				F3675AC65A0D53787C5FF965 /* MacKitLifecycle in Frameworks */,
+				E21637E2D7D26A9BF3DB3025 /* MacKitUpdater in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,6 +325,7 @@
 				8E9F7252EBE8E3D6ACC15D3D /* MacKitCore */,
 				3A320A2106982294CA762DD3 /* MacKitLaunchAtLogin */,
 				10B6C07A95B1CE2CDD98F921 /* MacKitLifecycle */,
+				9707E0300A0E0FA5D3CD963C /* MacKitUpdater */,
 			);
 			productName = NeatPaste;
 			productReference = 491695E0CBF9C5DA4B7AD964 /* NeatPaste.app */;
@@ -721,7 +724,7 @@
 			repositoryURL = "https://github.com/x0c/mac-kit-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
+				minimumVersion = 0.1.2;
 			};
 		};
 		E79E7210C0A68272EB274A83 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
@@ -759,6 +762,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = E38D753C248A16ABE33F0314 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
 			productName = MacKitCore;
+		};
+		9707E0300A0E0FA5D3CD963C /* MacKitUpdater */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = E38D753C248A16ABE33F0314 /* XCRemoteSwiftPackageReference "mac-kit-swift" */;
+			productName = MacKitUpdater;
 		};
 		DA73972B148B3C48E421130B /* MacKitLifecycle */ = {
 			isa = XCSwiftPackageProductDependency;
