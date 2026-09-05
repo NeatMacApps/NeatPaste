@@ -12,3 +12,4 @@ Packages/
 .claude/
 TASKBOARD.md
 scripts/publish-local.env
+.build-menubar-fix/
