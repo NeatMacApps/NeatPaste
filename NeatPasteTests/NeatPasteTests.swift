@@ -625,6 +625,20 @@ final class MenuBarRecoveryPolicyTests: XCTestCase {
         XCTAssertTrue(MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: false))
     }
 
+    func test_登录项拉起即使图标隐藏也不出示恢复窗() {
+        XCTAssertEqual(
+            MenuBarReopenPolicy.presentation(
+                iconVisible: false,
+                isReopenOrLaunch: true,
+                isLoginLaunch: true
+            ),
+            .none
+        )
+        XCTAssertFalse(
+            MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: false, isLoginLaunch: true)
+        )
+    }
+
     func test_图标可见时再次打开不要用恢复窗顶替() {
         XCTAssertEqual(
             MenuBarReopenPolicy.presentation(iconVisible: true, isReopenOrLaunch: true),

@@ -64,13 +64,10 @@ final class AppPreferences {
         }
     }
 
-    /// 显隐菜单栏图标。关掉时必须出示恢复窗口，不能只把图标拿掉。
+    /// 显隐菜单栏图标。点隐藏时静默，不弹恢复窗；再次打开应用或「打开主窗口」才出示。
     func setMenuBarIconVisible(_ visible: Bool) {
         isMenuBarIconVisible = visible
         AppDelegate.shared?.applyMenuBarIconVisibility()
-        if !visible {
-            AppDelegate.shared?.showRecoveryWindow()
-        }
     }
 
     func saveHotkey(keyCode: UInt32, modifiers: UInt32) {

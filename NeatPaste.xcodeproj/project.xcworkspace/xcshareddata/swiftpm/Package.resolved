@@ -1,24 +1,24 @@
 {
-  "originHash" : "533c24b6776b80dc140e0190df9fc974b5f189bf006de228851fb11eb5e53905",
-  "pins" : [
+  "originHash": "533c24b6776b80dc140e0190df9fc974b5f189bf006de228851fb11eb5e53905",
+  "pins": [
     {
-      "identity" : "mac-kit-swift",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/x0c/mac-kit-swift",
-      "state" : {
-        "revision" : "0a0f0a28b46ff0bd0beb2c9d6d171a9bdeb77fce",
-        "version" : "0.1.1"
+      "identity": "mac-kit-swift",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/x0c/mac-kit-swift",
+      "state": {
+        "revision": "3568962276c1943d18f6ff09b5b3aea03b2740d8",
+        "version": "0.1.2"
       }
     },
     {
-      "identity" : "sparkle",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/sparkle-project/Sparkle",
-      "state" : {
-        "revision" : "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
-        "version" : "2.9.6"
+      "identity": "sparkle",
+      "kind": "remoteSourceControl",
+      "location": "https://github.com/sparkle-project/Sparkle",
+      "state": {
+        "revision": "ac2def288cbff5cfc7df3ffef6abdf45b72bcb0a",
+        "version": "2.9.6"
       }
     }
   ],
-  "version" : 3
+  "version": 3
 }

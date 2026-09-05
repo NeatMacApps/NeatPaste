@@ -75,7 +75,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return event
         }
 
-        if MenuBarReopenPolicy.shouldShowRecoveryWindow(iconVisible: AppPreferences.shared.isMenuBarIconVisible) {
+        let isLoginLaunch = LoginLaunchDetector.isLaunchedAsLoginItem
+        if MenuBarReopenPolicy.shouldShowRecoveryWindow(
+            iconVisible: AppPreferences.shared.isMenuBarIconVisible,
+            isLoginLaunch: isLoginLaunch
+        ) {
             showRecoveryWindow()
         }
     }
