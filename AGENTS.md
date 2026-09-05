@@ -6,7 +6,7 @@
 
 右键菜单已有开机自启动、检查更新、隐藏菜单栏图标；设置与独立恢复窗口可再显示图标。历史浮层点外面即关，不能当恢复面。本机是 Linux，不能编译；回 Mac 后先 `xcodegen generate`，再按 app-macos 仓库命令构建安装验收。
 
-通用工程规范：[Swift 规范](../_standards/swift.md)
+通用工程规范：[Swift 规范](/Users/geraltgraham/Codes/_standards/swift.md)
 
 NeatPaste 是 macOS 菜单栏剪贴板历史工具：复制后可唤出面板，按时间从新到旧挑选并粘贴回刚才正在输入的地方。
 
@@ -44,19 +44,19 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 ## 文档导航
 
-- [app-macos/AGENTS.md](app-macos/AGENTS.md)：改、评审或排查 macOS 客户端工程、面板、预览窗、热键、菜单栏、去重、光标锚点、收录探测或覆盖安装前**必读**。不读会把面板做成抢焦点、用错菜单栏实现，把预览限尺寸拿掉，漏收刚复制的内容，或覆盖安装把签名装坏。
-- [app-macos/docs/PRODUCT_CONTRACT.md](app-macos/docs/PRODUCT_CONTRACT.md)：改、评审或排查任何用户可见行为、历史保留、粘贴、收录探测、预览、去重、面板位置、列表右键删除、隐藏菜单栏图标、恢复窗口、开机自启三态与「明确不做」的范围前**必读**。不读会把已钉死的体验改掉，把历史浮层当成恢复面，或把后续不做的能力做进去。
-- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
-- [app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
-- [app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md](app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md)：改、评审或排查活动监视器内存偏高、历史文件很大、复制截图后占用暴涨，或打算压历史内存前**必读**。不读会把整包常驻误判成泄漏，或为了省内存改成只留纯文本、拿掉重启后仍在的持久化。
-- [../_standards/swift.md](../_standards/swift.md)：新建、评审或改造本 macOS 应用前**必读**。不读会偏离开源 Mac 应用的签名、本地化、无蓝框和覆盖安装闭环。
-- [../_standards/workspace-docs/swift-docs/macos-app-baseline.md](../_standards/workspace-docs/swift-docs/macos-app-baseline.md)：新建、脚手架、评审本应用完整度、补分发/开机自启/快捷键/设置窗前**必读**。不读会把「第一波能跑」当成完成，或把未对外发行的暂缓当成可以永久不做。
-- [../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标或菜单栏图标前**必读**。不读会再补一套扁平切图，系统会把图标降成灰底。
-- [../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md](../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md)：改菜单栏生命周期、悬浮面板、退出拦截、开机自启、系统剪贴板收录/写回或本机冒烟日志前**必读**。不读会在新系统上被自动退出，或漏收刚复制的内容。
-- [../_standards/workspace-docs/swift-docs/liquid-glass-practices.md](../_standards/workspace-docs/swift-docs/liquid-glass-practices.md)：改面板玻璃、透明度或列表底色前**必读**。不读会把列表做成整窗透明，字看不清。
-- [../_standards/workspace-docs/swift-docs/apple-app-preferences.md](../_standards/workspace-docs/swift-docs/apple-app-preferences.md)：新增设置项或改设置窗口打开方式前**必读**。不读会出现设置打不开、键名散落或默认值不一致。
-- [../_standards/workspace-docs/swift-docs/macos-system-permissions.md](../_standards/workspace-docs/swift-docs/macos-system-permissions.md)：改粘贴所需的辅助功能授权、引导或降级态前**必读**。不读会在用户拒绝后反复弹窗，或拒绝后整段粘贴不可用。
-- [../_standards/workspace-docs/swift-docs/apple-localization.md](../_standards/workspace-docs/swift-docs/apple-localization.md)：改用户可见文案或补语言前**必读**。不读会把键名显示给用户，或只改一种语言。
+- [app-macos/AGENTS.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/AGENTS.md)：改、评审或排查 macOS 客户端工程、面板、预览窗、热键、菜单栏、去重、光标锚点、收录探测或覆盖安装前**必读**。不读会把面板做成抢焦点、用错菜单栏实现，把预览限尺寸拿掉，漏收刚复制的内容，或覆盖安装把签名装坏。
+- [app-macos/docs/PRODUCT_CONTRACT.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/PRODUCT_CONTRACT.md)：改、评审或排查任何用户可见行为、历史保留、粘贴、收录探测、预览、去重、面板位置、列表右键删除、隐藏菜单栏图标、恢复窗口、开机自启三态与「明确不做」的范围前**必读**。不读会把已钉死的体验改掉，把历史浮层当成恢复面，或把后续不做的能力做进去。
+- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
+- [app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
+- [app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md)：改、评审或排查活动监视器内存偏高、历史文件很大、复制截图后占用暴涨，或打算压历史内存前**必读**。不读会把整包常驻误判成泄漏，或为了省内存改成只留纯文本、拿掉重启后仍在的持久化。
+- [../_standards/swift.md](/Users/geraltgraham/Codes/_standards/swift.md)：新建、评审或改造本 macOS 应用前**必读**。不读会偏离开源 Mac 应用的签名、本地化、无蓝框和覆盖安装闭环。
+- [../_standards/workspace-docs/swift-docs/macos-app-baseline.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/macos-app-baseline.md)：新建、脚手架、评审本应用完整度、补分发/开机自启/快捷键/设置窗前**必读**。不读会把「第一波能跑」当成完成，或把未对外发行的暂缓当成可以永久不做。
+- [../_standards/workspace-docs/swift-docs/apple-app-icon-assets.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/apple-app-icon-assets.md)：新做、更换、评审或排查应用图标或菜单栏图标前**必读**。不读会再补一套扁平切图，系统会把图标降成灰底。
+- [../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md)：改菜单栏生命周期、悬浮面板、退出拦截、开机自启、系统剪贴板收录/写回或本机冒烟日志前**必读**。不读会在新系统上被自动退出，或漏收刚复制的内容。
+- [../_standards/workspace-docs/swift-docs/liquid-glass-practices.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/liquid-glass-practices.md)：改面板玻璃、透明度或列表底色前**必读**。不读会把列表做成整窗透明，字看不清。
+- [../_standards/workspace-docs/swift-docs/apple-app-preferences.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/apple-app-preferences.md)：新增设置项或改设置窗口打开方式前**必读**。不读会出现设置打不开、键名散落或默认值不一致。
+- [../_standards/workspace-docs/swift-docs/macos-system-permissions.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/macos-system-permissions.md)：改粘贴所需的辅助功能授权、引导或降级态前**必读**。不读会在用户拒绝后反复弹窗，或拒绝后整段粘贴不可用。
+- [../_standards/workspace-docs/swift-docs/apple-localization.md](/Users/geraltgraham/Codes/_standards/workspace-docs/swift-docs/apple-localization.md)：改用户可见文案或补语言前**必读**。不读会把键名显示给用户，或只改一种语言。
 
 <!-- managed:inherited-agents:end -->
 
