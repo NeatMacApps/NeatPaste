@@ -1,5 +1,6 @@
 import AppKit
 import MacKitCore
+import MacKitLifecycle
 import XCTest
 @testable import NeatPaste
 @preconcurrency import Carbon

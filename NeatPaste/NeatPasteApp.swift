@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import MacKitLifecycle
 import SwiftUI
 
 @main

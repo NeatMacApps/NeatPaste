@@ -120,6 +120,8 @@ targets:
       - target: NeatPaste
       - package: MacKit
         product: MacKitCore
+      - package: MacKit
+        product: MacKitLifecycle
 
 schemes:
   NeatPaste:
