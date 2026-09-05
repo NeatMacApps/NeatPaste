@@ -11,7 +11,7 @@ enum PasteOutcome: Equatable, Sendable {
 enum PasteEngine {
     /// 把条目按原始类型写回系统剪贴板；若已授权辅助功能则合成 ⌘V。调用方必须先在自动粘贴路径里关掉面板。
     static func paste(record: HistoryItem, payloads: [String: Data]? = nil) async -> PasteOutcome {
-        write(record, payloads: payloads ?? record.payloads, to: NSPasteboard.general)
+        var writtenChangeCount = write(record, payloads: payloads ?? record.payloads, to: NSPasteboard.general)
         print("[NeatPaste] 已将条目写入系统剪贴板：\(record.plainText.prefix(40))")
 
         guard AccessibilityPermission.isTrusted else {
@@ -20,12 +20,27 @@ enum PasteEngine {
         }
 
         await Task.yield()
-        synthesizeCommandV()
+        // 写回后若板被别人冲掉，禁止合成 ⌘V，否则会贴错内容；先再写一次，仍不稳则只保留「已复制」。
+        if NSPasteboard.general.changeCount != writtenChangeCount {
+            print("[NeatPaste] 写回后剪贴板已被改写，重新写回后再粘贴")
+            writtenChangeCount = write(record, payloads: payloads ?? record.payloads, to: NSPasteboard.general)
+        }
+        guard NSPasteboard.general.changeCount == writtenChangeCount else {
+            print("[NeatPaste] 剪贴板仍不稳定，取消合成粘贴键，避免贴错")
+            return .copiedOnly
+        }
+
+        guard synthesizeCommandV() else {
+            print("[NeatPaste] 合成粘贴键失败，仅写入剪贴板")
+            return .copiedOnly
+        }
         print("[NeatPaste] 已合成粘贴键")
         return .autoPasted
     }
 
-    static func write(_ record: HistoryItem, payloads: [String: Data]? = nil, to pasteboard: NSPasteboard) {
+    /// 写回条目并打内部标记；返回写完后的 changeCount（general 板上还会通知监听跳过本条写回）。
+    @discardableResult
+    static func write(_ record: HistoryItem, payloads: [String: Data]? = nil, to pasteboard: NSPasteboard) -> Int {
         let resolved = payloads ?? record.payloads
         pasteboard.clearContents()
 
@@ -72,12 +87,15 @@ enum PasteEngine {
         }
 
         pasteboard.setData(Data(), forType: NSPasteboard.PasteboardType(PasteboardCapture.internalType))
+        let changeCount = pasteboard.changeCount
         if pasteboard.name == NSPasteboard.Name.general {
-            AppDelegate.shared?.clipboardMonitor.noteOwnWrite(changeCount: pasteboard.changeCount)
+            AppDelegate.shared?.clipboardMonitor.noteOwnWrite(changeCount: changeCount)
         }
+        return changeCount
     }
 
-    private static func synthesizeCommandV() {
+    /// 合成 ⌘V；事件创建失败时返回 false，调用方不得当成已自动粘贴。
+    private static func synthesizeCommandV() -> Bool {
         let commandFlag = CGEventFlags(rawValue: CGEventFlags.maskCommand.rawValue | 0x000008)
         let vCode = CGKeyCode(kVK_ANSI_V)
         let source = CGEventSource(stateID: .combinedSessionState)
@@ -86,11 +104,15 @@ enum PasteEngine {
             state: .eventSuppressionStateSuppressionInterval
         )
 
-        let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: true)
-        let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: false)
-        keyDown?.flags = commandFlag
-        keyUp?.flags = commandFlag
-        keyDown?.post(tap: .cgSessionEventTap)
-        keyUp?.post(tap: .cgSessionEventTap)
+        guard let keyDown = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: true),
+              let keyUp = CGEvent(keyboardEventSource: source, virtualKey: vCode, keyDown: false)
+        else {
+            return false
+        }
+        keyDown.flags = commandFlag
+        keyUp.flags = commandFlag
+        keyDown.post(tap: .cgSessionEventTap)
+        keyUp.post(tap: .cgSessionEventTap)
+        return true
     }
 }

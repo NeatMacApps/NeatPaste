@@ -80,6 +80,7 @@
 		7D0A3C383CE86F2DF5101658 /* ArrowKeyRepeat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArrowKeyRepeat.swift; sourceTree = "<group>"; };
 		7D1445CE4798265F07DAB903 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		84B9C5471464A56D220A7962 /* 2026-08-15-history-panel-preview-and-anchor.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "2026-08-15-history-panel-preview-and-anchor.md"; sourceTree = "<group>"; };
+		85FA2902204DBDE93BFF177B /* TROUBLESHOOTING_INDEX.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = TROUBLESHOOTING_INDEX.md; sourceTree = "<group>"; };
 		8A6D68E6CDC6BE74087204F3 /* TitledWindowActivation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TitledWindowActivation.swift; sourceTree = "<group>"; };
 		91E0FD9F81049441ABC5F07E /* RecoveryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryView.swift; sourceTree = "<group>"; };
 		97910AAA2EAF63831B00C61B /* NeatPasteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NeatPasteTests.swift; sourceTree = "<group>"; };
@@ -148,6 +149,7 @@
 				66464DB2094FE46802EBF4E6 /* 2026-08-15-clipboard-ingest-retry.md */,
 				84B9C5471464A56D220A7962 /* 2026-08-15-history-panel-preview-and-anchor.md */,
 				4E4D68E2BAA27F3E0F2A6721 /* 2026-09-05-history-memory-footprint.md */,
+				85FA2902204DBDE93BFF177B /* TROUBLESHOOTING_INDEX.md */,
 			);
 			path = troubleshooting;
 			sourceTree = "<group>";

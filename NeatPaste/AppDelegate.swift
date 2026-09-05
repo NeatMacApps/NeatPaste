@@ -48,6 +48,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 self?.panelModel.needsAccessibilityPrompt = true
             }
         }
+        panelModel.onRevealForAccessibilityPrompt = { [weak self] in
+            self?.showPanel(preservingAccessibilityPrompt: true)
+        }
 
         statusItemController = StatusItemController(
             onOpenPanel: { [weak self] in self?.showPanel() },
@@ -126,13 +129,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func showPanel() {
+    func showPanel(preservingAccessibilityPrompt: Bool = false) {
         guard let panel else { return }
         // 必须在异步刷新之前记下光标，否则面板一旦成为焦点就只能锚到自己身上。
         let frame = PanelAnchor.frame(for: AppPreferences.panelSize)
+        let keepPrompt = preservingAccessibilityPrompt || panelModel.needsAccessibilityPrompt
         Task { @MainActor in
             await clipboardMonitor.poll()
             await panelModel.reload()
+            if keepPrompt {
+                panelModel.needsAccessibilityPrompt = true
+            }
             panel.showPanel(frame: frame)
         }
     }

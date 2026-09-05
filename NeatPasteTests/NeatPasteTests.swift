@@ -140,6 +140,11 @@ final class PasteboardCaptureTests: XCTestCase {
         XCTAssertTrue(PasteboardCapture.shouldAdvanceChangeCount(decision: .skipIgnoredApp, didCapture: false))
     }
 
+    func test_收录过程中变化计数漂移则不能提交() {
+        XCTAssertTrue(ClipboardMonitor.isChangeCountStable(observed: 7, current: 7))
+        XCTAssertFalse(ClipboardMonitor.isChangeCountStable(observed: 7, current: 8))
+    }
+
     @MainActor
     func test_独立剪贴板能从整板字符串读出快照() {
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("neatpaste.test.string.\(UUID().uuidString)"))
@@ -743,6 +748,26 @@ final class PasteEngineWriteTests: XCTestCase {
             "写回后应仍带文件地址，实际=\(fileURL ?? "nil")"
         )
         XCTAssertNotNil(pasteboard.data(forType: NSPasteboard.PasteboardType(PasteboardCapture.internalType)))
+    }
+
+    @MainActor
+    func test_写回返回的变化计数与当前板一致() {
+        let text = "change-count-\(UUID().uuidString)"
+        let record = HistoryItem(
+            id: UUID(),
+            createdAt: Date(),
+            plainText: text,
+            sourceBundleID: nil,
+            hasImage: false,
+            types: ["public.utf8-plain-text"],
+            payloads: ["public.utf8-plain-text": Data(text.utf8)]
+        )
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("neatpaste.test.write.count.\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+
+        let written = PasteEngine.write(record, to: pasteboard)
+        XCTAssertEqual(written, pasteboard.changeCount)
+        XCTAssertEqual(pasteboard.string(forType: .string), text)
     }
 }
 

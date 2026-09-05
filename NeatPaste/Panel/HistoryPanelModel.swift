@@ -14,6 +14,8 @@ final class HistoryPanelModel {
     /// 鼠标点选触发粘贴时，先挡住双击收尾那一下，避免点穿到下面的窗口。
     var onSuppressClickThrough: (() -> Void)?
     var onPasteOutcome: ((PasteOutcome) -> Void)?
+    /// 已关面板但自动粘贴失败时，重新出示面板以显示辅助功能提示。
+    var onRevealForAccessibilityPrompt: (() -> Void)?
     var onSelectionChange: (() -> Void)?
     private var isPasting = false
 
@@ -118,6 +120,7 @@ final class HistoryPanelModel {
         defer { isPasting = false }
 
         let trusted = AccessibilityPermission.isTrusted
+        // 能自动粘贴时必须先关面板，否则 ⌘V 会打进本面板搜索框。
         if trusted {
             if fromMouse {
                 onSuppressClickThrough?()
@@ -129,6 +132,10 @@ final class HistoryPanelModel {
         onPasteOutcome?(outcome)
         if outcome == .copiedOnly {
             needsAccessibilityPrompt = true
+            // 已关掉却没自动贴上：再打开面板，让用户看见「已复制 / 去开辅助功能」提示。
+            if trusted {
+                onRevealForAccessibilityPrompt?()
+            }
         }
     }
 }
