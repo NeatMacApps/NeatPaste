@@ -405,11 +405,28 @@ fi
 
 # ---------- 9. 匿名终检 ----------
 log_step "匿名下载与更新清单终检"
-curl -fsSL "${FEED_URL}" -o "${work_dir}/published-appcast.xml" \
-  || die "公开 appcast 无法匿名下载"
-xmllint --noout "${work_dir}/published-appcast.xml" || die "线上 appcast 不是合法 XML"
-grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml" \
-  || die "线上 appcast 没有当前内部构建号 ${build_number}"
+# raw.githubusercontent.com/main 常有 CDN 延迟，推送后立刻读可能仍是旧清单；重试并在末次回退到 GitHub Contents API。
+appcast_ok=0
+for attempt in 1 2 3 4 5 6 7 8; do
+  if curl -fsSL "${FEED_URL}" -o "${work_dir}/published-appcast.xml" \
+    && xmllint --noout "${work_dir}/published-appcast.xml" \
+    && grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml"; then
+    appcast_ok=1
+    break
+  fi
+  echo "公开 appcast 尚未见到构建号 ${build_number}（第 ${attempt} 次，多半是 CDN 未刷新）"
+  sleep 15
+done
+if [[ "${appcast_ok}" -ne 1 ]]; then
+  curl -fsSL -H "Accept: application/vnd.github.raw" \
+    "https://api.github.com/repos/${REPO}/contents/appcast.xml?ref=main" \
+    -o "${work_dir}/published-appcast.xml" \
+    || die "公开 appcast 无法匿名下载（CDN 与 API 均失败）"
+  xmllint --noout "${work_dir}/published-appcast.xml" || die "线上 appcast 不是合法 XML"
+  grep -q "<sparkle:version>${build_number}</sparkle:version>" "${work_dir}/published-appcast.xml" \
+    || die "线上 appcast 没有当前内部构建号 ${build_number}"
+  echo "CDN 仍滞后，已用 GitHub Contents API 核对 appcast 构建号 ${build_number}"
+fi
 "${sparkle_bin_dir}/sign_update" --account "${SPARKLE_ACCOUNT}" --verify "${work_dir}/published-appcast.xml" >/dev/null \
   || die "线上 appcast 完整性校验失败：公开更新清单未签名或传输后被改写"
 curl -fsSL --range 0-0 "${REPO_WEB}/releases/download/${tag}/${APP_NAME}-${version}.zip" -o /dev/null \
