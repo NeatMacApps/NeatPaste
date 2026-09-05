@@ -98,6 +98,13 @@ struct HistoryPanelView: View {
                                 .onTapGesture {
                                     Task { await model.handleItemClick(item.id) }
                                 }
+                                .contextMenu {
+                                    Button(role: .destructive) {
+                                        Task { await model.deleteItem(item.id) }
+                                    } label: {
+                                        Text(String(localized: "panel.history.delete"))
+                                    }
+                                }
                                 .onHover { hovering in
                                     hoveredID = hovering ? item.id : nil
                                 }

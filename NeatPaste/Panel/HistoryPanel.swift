@@ -268,6 +268,8 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         guard isVisible else { return }
         if eventWindow === self { return }
         if let preview = QLPreviewPanel.shared(), eventWindow === preview { return }
+        // 列表右键菜单落在弹出层上：点菜单项不能当成「点外面」关面板。
+        if Self.isContextMenuWindow(eventWindow) { return }
 
         var kept = [frame] + additionalKeptFrames()
         if let preview = QLPreviewPanel.shared(), preview.isVisible {
@@ -275,6 +277,13 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         }
         guard HistoryPanelDismiss.shouldHide(click: point, keptFrames: kept) else { return }
         hidePanel()
+    }
+
+    private static func isContextMenuWindow(_ window: NSWindow?) -> Bool {
+        guard let window else { return false }
+        if window.level == .popUpMenu { return true }
+        let name = String(describing: type(of: window))
+        return name.contains("Menu")
     }
 
     private func handleKeyDown(_ event: NSEvent) -> NSEvent? {

@@ -68,6 +68,42 @@ final class HistoryPanelModel {
         }
     }
 
+    /// 右键删除：立刻从本机历史去掉，不弹确认，不关面板。
+    func deleteItem(_ id: HistoryItem.ID) async {
+        let deletedIndex = visibleItems.firstIndex { $0.id == id }
+        let wasSelected = selectedID == id
+        await history.delete(id: id)
+        allItems = await history.items()
+        visibleItems = await history.search(query)
+
+        if wasSelected || selectedID == nil {
+            restoreSelection(afterDeletingAt: deletedIndex)
+        } else if let selectedID, visibleItems.contains(where: { $0.id == selectedID }) {
+            onSelectionChange?()
+        } else {
+            selectedID = visibleItems.first?.id
+            onSelectionChange?()
+        }
+    }
+
+    private func restoreSelection(afterDeletingAt deletedIndex: Int?) {
+        guard !visibleItems.isEmpty else {
+            selectedID = nil
+            onSelectionChange?()
+            return
+        }
+        guard let deletedIndex else {
+            selectedID = visibleItems.first?.id
+            onSelectionChange?()
+            return
+        }
+        if deletedIndex < visibleItems.count {
+            select(visibleItems[deletedIndex].id)
+        } else {
+            select(visibleItems[visibleItems.count - 1].id)
+        }
+    }
+
     func dismiss() {
         onHide?()
     }

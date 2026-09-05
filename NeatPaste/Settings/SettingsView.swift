@@ -4,16 +4,6 @@ struct SettingsView: View {
     @ObservedObject private var hotkeyManager = HotkeyManager.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
     @Bindable private var preferences = AppPreferences.shared
-    @FocusState private var focusedControl: Control?
-
-    private enum Control: Hashable {
-        case record
-        case clear
-        case restore
-        case launchAtLogin
-        case openLoginSettings
-        case menuBarIcon
-    }
 
     var body: some View {
         Form {
@@ -54,25 +44,19 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .disabled(hotkeyManager.isRecording)
-                .focused($focusedControl, equals: .record)
                 .focusEffectDisabled()
-                .overlay { focusRing(for: .record) }
 
                 Button(String(localized: "settings.hotkey.clear")) {
                     hotkeyManager.clearShortcut()
                 }
                 .buttonStyle(.bordered)
-                .focused($focusedControl, equals: .clear)
                 .focusEffectDisabled()
-                .overlay { focusRing(for: .clear) }
 
                 Button(String(localized: "settings.hotkey.restore")) {
                     hotkeyManager.restoreSafeDefault()
                 }
                 .buttonStyle(.bordered)
-                .focused($focusedControl, equals: .restore)
                 .focusEffectDisabled()
-                .overlay { focusRing(for: .restore) }
             }
 
             if let message = hotkeyManager.lastErrorMessage {
@@ -93,9 +77,7 @@ struct SettingsView: View {
                     set: { launchAtLogin.setEnabled($0) }
                 )
             )
-            .focused($focusedControl, equals: .launchAtLogin)
             .focusEffectDisabled()
-            .overlay { focusRing(for: .launchAtLogin, cornerRadius: 6) }
 
             if launchAtLogin.requiresApproval {
                 Text(String(localized: "settings.launchAtLogin.needsApproval"))
@@ -106,9 +88,7 @@ struct SettingsView: View {
                 Button(String(localized: "settings.launchAtLogin.openSettings")) {
                     launchAtLogin.openSystemSettings()
                 }
-                .focused($focusedControl, equals: .openLoginSettings)
                 .focusEffectDisabled()
-                .overlay { focusRing(for: .openLoginSettings) }
             }
 
             if let lastErrorMessage = launchAtLogin.lastErrorMessage {
@@ -128,9 +108,7 @@ struct SettingsView: View {
                     set: { preferences.setMenuBarIconVisible($0) }
                 )
             )
-            .focused($focusedControl, equals: .menuBarIcon)
             .focusEffectDisabled()
-            .overlay { focusRing(for: .menuBarIcon, cornerRadius: 6) }
         }
     }
 
@@ -145,15 +123,5 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    @ViewBuilder
-    private func focusRing(for control: Control, cornerRadius: CGFloat = 7) -> some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(
-                focusedControl == control ? Color.primary.opacity(0.65) : .clear,
-                lineWidth: 1.5
-            )
-            .allowsHitTesting(false)
     }
 }

@@ -253,6 +253,24 @@
         }
       }
     },
+    "panel.history.delete": {
+      "comment": "Context menu: delete one history item immediately, no confirmation",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "删除"
+          }
+        }
+      }
+    },
     "panel.history.empty": {
       "comment": "Empty history list",
       "extractionState": "manual",

@@ -4,14 +4,6 @@ import SwiftUI
 struct RecoveryView: View {
     @Bindable private var preferences = AppPreferences.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
-    @FocusState private var focusedControl: Control?
-
-    private enum Control: Hashable {
-        case launchAtLogin
-        case openLoginSettings
-        case checkForUpdates
-        case menuBarIcon
-    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -31,9 +23,7 @@ struct RecoveryView: View {
                     set: { launchAtLogin.setEnabled($0) }
                 )
             )
-            .focused($focusedControl, equals: .launchAtLogin)
             .focusEffectDisabled()
-            .overlay { focusRing(for: .launchAtLogin, cornerRadius: 6) }
 
             if launchAtLogin.requiresApproval {
                 Text(String(localized: "settings.launchAtLogin.needsApproval"))
@@ -44,9 +34,7 @@ struct RecoveryView: View {
                 Button(String(localized: "settings.launchAtLogin.openSettings")) {
                     launchAtLogin.openSystemSettings()
                 }
-                .focused($focusedControl, equals: .openLoginSettings)
                 .focusEffectDisabled()
-                .overlay { focusRing(for: .openLoginSettings) }
             }
 
             if let lastErrorMessage = launchAtLogin.lastErrorMessage {
@@ -58,9 +46,7 @@ struct RecoveryView: View {
             Button(String(localized: "menu.checkForUpdates")) {
                 AppDelegate.shared?.checkForUpdates()
             }
-            .focused($focusedControl, equals: .checkForUpdates)
             .focusEffectDisabled()
-            .overlay { focusRing(for: .checkForUpdates) }
 
             Toggle(
                 String(localized: "settings.menuBarIcon.toggle"),
@@ -69,9 +55,7 @@ struct RecoveryView: View {
                     set: { preferences.setMenuBarIconVisible($0) }
                 )
             )
-            .focused($focusedControl, equals: .menuBarIcon)
             .focusEffectDisabled()
-            .overlay { focusRing(for: .menuBarIcon, cornerRadius: 6) }
         }
         .padding(24)
         .frame(minWidth: 340, alignment: .leading)
@@ -79,15 +63,5 @@ struct RecoveryView: View {
         .onAppear {
             launchAtLogin.refresh()
         }
-    }
-
-    @ViewBuilder
-    private func focusRing(for control: Control, cornerRadius: CGFloat = 7) -> some View {
-        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .strokeBorder(
-                focusedControl == control ? Color.primary.opacity(0.65) : .clear,
-                lineWidth: 1.5
-            )
-            .allowsHitTesting(false)
     }
 }
