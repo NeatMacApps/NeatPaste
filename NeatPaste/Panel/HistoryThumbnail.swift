@@ -1,7 +1,7 @@
 import AppKit
+import Foundation
 import ImageIO
 
-/// 列表小方图用的缩小图。用 ImageIO 抽缩略图，避免把整张截图按原尺寸解码。
 nonisolated enum HistoryThumbnail: Sendable {
     static let side: CGFloat = 28
     private static let maxPixel = 56
@@ -19,6 +19,9 @@ nonisolated enum HistoryThumbnail: Sendable {
     }
 
     private static func makeImage(for item: HistoryItem) -> NSImage? {
+        if let url = item.preferredExternalImageURL() {
+            return downsample(url: url)
+        }
         if let data = item.imageBytes() {
             return downsample(data: data)
         }

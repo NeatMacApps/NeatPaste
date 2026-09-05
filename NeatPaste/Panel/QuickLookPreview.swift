@@ -15,6 +15,11 @@ nonisolated enum QuickLookPreviewFile: Sendable {
             return fileURL
         }
 
+        // 旁路图片文件可直接给 Quick Look，避免先读进内存再写临时文件。
+        if let external = item.preferredExternalImageURL() {
+            return external
+        }
+
         if item.hasImage, let image = imagePayload(in: item) {
             let url = directory.appendingPathComponent("\(item.id.uuidString).\(image.fileExtension)")
             try image.data.write(to: url, options: .atomic)

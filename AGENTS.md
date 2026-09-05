@@ -99,7 +99,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 - **相同内容去重。** 收入时按用户可见内容合并，旧的删掉、新的顶到最上。不要按会随每次复制变掉的网页/应用元数据当成新条目。
 - **图片行必须出缩略图。** 固定小方图里画真实缩小图，禁止只放通用照片图标。系统临时文件名、内部编号不得当作列表标题；没有可读名称时显示「图片」。
 - **禁止把 SwiftUI 菜单栏额外场景当成真正的菜单栏。** 真正工作的是状态栏按钮 + 自定义浮层；入口里那个永远隐藏的空菜单栏场景只为了满足框架协议。
-- **历史必须落在本机、重启还在。** 7 天是给用户留的，不是「这次打开期间有效」。禁止 SwiftData / Core Data / GRDB；用本机用户资料目录里的文件保存完整条目（不降级）。生产路径禁止只放内存，也禁止塞假数据。接口写在 `HistoryServing`。
+- **历史必须落在本机、重启还在。** 7 天是给用户留的，不是「这次打开期间有效」。禁止 SwiftData / Core Data / GRDB；用本机用户资料目录里的文件保存完整条目（不降级）。**完整图片字节不常驻内存**，旁路文件按需加载；生产路径禁止只放内存，也禁止塞假数据。接口写在 `HistoryServing`。踩坑见 [docs/troubleshooting/2026-09-05-history-memory-footprint.md](docs/troubleshooting/2026-09-05-history-memory-footprint.md)。
 - **剪贴板变化必须可重试。** 先看到变化、内容还没装上时，不得把变化计数往前推；否则打开面板也读不到这一条。密码/瞬时/本应用写回才算处理完。条目字节为空时必须回退读整板。单测只用独立命名的剪贴板，禁止动系统剪贴板。踩坑与验收见 [docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)。
 - **含文件地址的写回必须一次写完。** 先写文本再写文件地址会把文本冲掉。
 - 用户退出必须走 `AppDelegate.shared.requestTermination()`。禁止把系统代理强转成 `AppDelegate`。

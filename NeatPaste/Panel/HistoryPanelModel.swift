@@ -88,7 +88,8 @@ final class HistoryPanelModel {
             }
             onHide?()
         }
-        let outcome = await PasteEngine.paste(record: item)
+        let payloads = await history.materializePayloads(id: item.id)
+        let outcome = await PasteEngine.paste(record: item, payloads: payloads)
         onPasteOutcome?(outcome)
         if outcome == .copiedOnly {
             needsAccessibilityPrompt = true

@@ -10,8 +10,8 @@ enum PasteOutcome: Equatable, Sendable {
 @MainActor
 enum PasteEngine {
     /// 把条目按原始类型写回系统剪贴板；若已授权辅助功能则合成 ⌘V。调用方必须先在自动粘贴路径里关掉面板。
-    static func paste(record: HistoryItem) async -> PasteOutcome {
-        write(record, to: NSPasteboard.general)
+    static func paste(record: HistoryItem, payloads: [String: Data]? = nil) async -> PasteOutcome {
+        write(record, payloads: payloads ?? record.payloads, to: NSPasteboard.general)
         print("[NeatPaste] 已将条目写入系统剪贴板：\(record.plainText.prefix(40))")
 
         guard AccessibilityPermission.isTrusted else {
@@ -25,30 +25,31 @@ enum PasteEngine {
         return .autoPasted
     }
 
-    static func write(_ record: HistoryItem, to pasteboard: NSPasteboard) {
+    static func write(_ record: HistoryItem, payloads: [String: Data]? = nil, to pasteboard: NSPasteboard) {
+        let resolved = payloads ?? record.payloads
         pasteboard.clearContents()
 
         let fileURLType = NSPasteboard.PasteboardType.fileURL.rawValue
         let fileDatas: [Data] = record.types.compactMap { type in
             guard type == fileURLType else { return nil }
-            return record.payloads[type]
+            return resolved[type]
         }
         let otherTypes = record.types.filter { type in
             type != fileURLType
                 && !PasteboardCapture.isFilePromise(type)
                 && !PasteboardCapture.isUnsafeToRead(type)
-                && record.payloads[type] != nil
+                && resolved[type] != nil
         }
 
         if fileDatas.isEmpty {
             var didWrite = false
             for type in otherTypes {
-                if let data = record.payloads[type] {
+                if let data = resolved[type] {
                     pasteboard.setData(data, forType: NSPasteboard.PasteboardType(type))
                     didWrite = true
                 }
             }
-            if !didWrite, !record.plainText.isEmpty, record.payloads.isEmpty {
+            if !didWrite, !record.plainText.isEmpty, resolved.isEmpty {
                 pasteboard.setString(record.plainText, forType: .string)
             }
         } else {
@@ -56,7 +57,7 @@ enum PasteEngine {
             var items: [NSPasteboardItem] = []
             let first = NSPasteboardItem()
             for type in otherTypes {
-                if let data = record.payloads[type] {
+                if let data = resolved[type] {
                     first.setData(data, forType: NSPasteboard.PasteboardType(type))
                 }
             }

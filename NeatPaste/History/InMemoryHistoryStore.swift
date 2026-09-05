@@ -3,15 +3,34 @@ import Foundation
 actor InMemoryHistoryStore: HistoryServing {
     private var records: [HistoryItem]
     private let storageURL: URL?
+    private let vault: PayloadVault?
 
     init(records: [HistoryItem] = [], storageURL: URL? = nil) {
         self.storageURL = storageURL
+        self.vault = storageURL.map { PayloadVault.alongsideHistoryJSON($0) }
         if records.isEmpty, let storageURL {
-            self.records = Self.load(from: storageURL)
+            self.records = Self.load(from: storageURL, vault: self.vault)
         } else {
-            self.records = records.sorted { $0.createdAt > $1.createdAt }
+            let payloadRoot = self.vault?.rootURL
+            self.records = records.map { item in
+                HistoryItem(
+                    id: item.id,
+                    createdAt: item.createdAt,
+                    plainText: item.plainText,
+                    sourceBundleID: item.sourceBundleID,
+                    hasImage: item.hasImage,
+                    hasFilePromise: item.hasFilePromise,
+                    types: item.types,
+                    payloads: item.payloads,
+                    externalPayloadTypes: item.externalPayloadTypes,
+                    contentFingerprint: item.contentFingerprint,
+                    payloadDirectoryURL: item.payloadDirectoryURL ?? payloadRoot
+                )
+            }.sorted { $0.createdAt > $1.createdAt }
         }
-        Self.dropExpired(from: &self.records)
+        var mutable = self.records
+        _ = Self.dropExpired(from: &mutable, vault: self.vault)
+        self.records = mutable
         if storageURL != nil {
             Self.write(self.records, to: storageURL)
         }
@@ -34,34 +53,123 @@ actor InMemoryHistoryStore: HistoryServing {
     }
 
     func ingest(_ snapshot: PasteboardSnapshot) async {
-        let item = snapshot.makeHistoryItem()
-        records.removeAll { $0.contentIdentity == item.contentIdentity }
-        records.insert(item, at: 0)
-        Self.dropExpired(from: &records)
+        let draft = snapshot.makeHistoryItem()
+        let prepared = prepareForStorage(draft, fullPayloads: snapshot.payloads)
+
+        let duplicates = records.filter { $0.contentIdentity == prepared.contentIdentity }
+        for duplicate in duplicates {
+            vault?.remove(itemID: duplicate.id)
+        }
+        records.removeAll { $0.contentIdentity == prepared.contentIdentity }
+        records.insert(prepared, at: 0)
+        _ = Self.dropExpired(from: &records, vault: vault)
         persist()
-        NSLog("[NeatPaste] 已收入一条剪贴板记录，类型数 %d，文本前缀 %@", snapshot.types.count, String(item.plainText.prefix(40)) as NSString)
+        NSLog(
+            "[NeatPaste] 已收入一条剪贴板记录，类型数 %d，外置 %d，文本前缀 %@",
+            snapshot.types.count,
+            prepared.externalPayloadTypes.count,
+            String(prepared.plainText.prefix(40)) as NSString
+        )
     }
 
     func delete(id: UUID) async {
+        vault?.remove(itemID: id)
         records.removeAll { $0.id == id }
         persist()
     }
 
     func sweepExpired(olderThan date: Date) async {
+        let doomed = records.filter { $0.createdAt < date }
+        for item in doomed {
+            vault?.remove(itemID: item.id)
+        }
         records.removeAll { $0.createdAt < date }
         persist()
+    }
+
+    func materializePayloads(id: UUID) async -> [String: Data] {
+        guard let item = records.first(where: { $0.id == id }) else { return [:] }
+        guard let vault, !item.externalPayloadTypes.isEmpty else {
+            return item.payloads
+        }
+        do {
+            return try vault.materialize(
+                itemID: item.id,
+                inline: item.payloads,
+                externalTypes: item.externalPayloadTypes
+            )
+        } catch {
+            NSLog("[NeatPaste] 旁路载荷读回失败：%@", error.localizedDescription)
+            return item.payloads
+        }
+    }
+
+    private func prepareForStorage(_ draft: HistoryItem, fullPayloads: [String: Data]) -> HistoryItem {
+        guard let vault else {
+            return HistoryItem(
+                id: draft.id,
+                createdAt: draft.createdAt,
+                plainText: draft.plainText,
+                sourceBundleID: draft.sourceBundleID,
+                hasImage: draft.hasImage,
+                hasFilePromise: draft.hasFilePromise,
+                types: draft.types,
+                payloads: fullPayloads,
+                externalPayloadTypes: [],
+                contentFingerprint: draft.contentFingerprint,
+                payloadDirectoryURL: nil
+            )
+        }
+
+        do {
+            let spilled = try vault.spill(itemID: draft.id, payloads: fullPayloads)
+            return HistoryItem(
+                id: draft.id,
+                createdAt: draft.createdAt,
+                plainText: draft.plainText,
+                sourceBundleID: draft.sourceBundleID,
+                hasImage: draft.hasImage,
+                hasFilePromise: draft.hasFilePromise,
+                types: draft.types,
+                payloads: spilled.inline,
+                externalPayloadTypes: spilled.externalTypes,
+                contentFingerprint: draft.contentFingerprint,
+                payloadDirectoryURL: vault.rootURL
+            )
+        } catch {
+            NSLog("[NeatPaste] 旁路写入失败，本条暂留内联：%@", error.localizedDescription)
+            return HistoryItem(
+                id: draft.id,
+                createdAt: draft.createdAt,
+                plainText: draft.plainText,
+                sourceBundleID: draft.sourceBundleID,
+                hasImage: draft.hasImage,
+                hasFilePromise: draft.hasFilePromise,
+                types: draft.types,
+                payloads: fullPayloads,
+                externalPayloadTypes: [],
+                contentFingerprint: draft.contentFingerprint,
+                payloadDirectoryURL: vault.rootURL
+            )
+        }
     }
 
     private func persist() {
         Self.write(records, to: storageURL)
     }
 
-    private static func dropExpired(from records: inout [HistoryItem]) {
+    @discardableResult
+    private static func dropExpired(from records: inout [HistoryItem], vault: PayloadVault?) -> [UUID] {
         let cutoff = Date().addingTimeInterval(-AppPreferences.historyLifetime)
+        let doomed = records.filter { $0.createdAt < cutoff }.map(\.id)
+        for id in doomed {
+            vault?.remove(itemID: id)
+        }
         records.removeAll { $0.createdAt < cutoff }
+        return doomed
     }
 
-    private static func load(from url: URL) -> [HistoryItem] {
+    private static func load(from url: URL, vault: PayloadVault?) -> [HistoryItem] {
         let fm = FileManager.default
         guard fm.fileExists(atPath: url.path) else { return [] }
         guard let data = try? Data(contentsOf: url) else {
@@ -71,8 +179,44 @@ actor InMemoryHistoryStore: HistoryServing {
         do {
             let decoder = JSONDecoder()
             decoder.dateDecodingStrategy = .iso8601
-            let loaded = try decoder.decode([HistoryItem].self, from: data)
-            return loaded.sorted { $0.createdAt > $1.createdAt }
+            let persisted = try decoder.decode([PersistedHistoryRecord].self, from: data)
+            let payloadRoot = vault?.rootURL
+            var migrated: [HistoryItem] = []
+            var didMigrate = false
+
+            for record in persisted {
+                var item = record.asHistoryItem(payloadDirectoryURL: payloadRoot)
+                if let vault {
+                    let needsSpill = item.payloads.contains { type, data in
+                        PayloadVault.shouldExternalize(type: type, data: data)
+                    }
+                    if needsSpill {
+                        let spilled = try vault.spill(itemID: item.id, payloads: item.payloads)
+                        item = HistoryItem(
+                            id: item.id,
+                            createdAt: item.createdAt,
+                            plainText: item.plainText,
+                            sourceBundleID: item.sourceBundleID,
+                            hasImage: item.hasImage,
+                            hasFilePromise: item.hasFilePromise,
+                            types: item.types.isEmpty ? Array(item.payloads.keys) + spilled.externalTypes : item.types,
+                            payloads: spilled.inline,
+                            externalPayloadTypes: Array(Set(item.externalPayloadTypes + spilled.externalTypes)).sorted(),
+                            contentFingerprint: item.contentFingerprint,
+                            payloadDirectoryURL: vault.rootURL
+                        )
+                        didMigrate = true
+                    }
+                }
+                migrated.append(item)
+            }
+
+            let sorted = migrated.sorted { $0.createdAt > $1.createdAt }
+            if didMigrate {
+                write(sorted, to: url)
+                NSLog("[NeatPaste] 已将历史大载荷外置迁移，条目 %d", sorted.count)
+            }
+            return sorted
         } catch {
             let stamp = Int(Date().timeIntervalSince1970)
             let backup = url.appendingPathExtension("corrupt-\(stamp)")
@@ -96,7 +240,8 @@ actor InMemoryHistoryStore: HistoryServing {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601
             encoder.outputFormatting = [.sortedKeys]
-            let data = try encoder.encode(records)
+            let persisted = records.map(PersistedHistoryRecord.from)
+            let data = try encoder.encode(persisted)
             try data.write(to: url, options: .atomic)
         } catch {
             NSLog("[NeatPaste] 历史写入失败：%@", error.localizedDescription)
