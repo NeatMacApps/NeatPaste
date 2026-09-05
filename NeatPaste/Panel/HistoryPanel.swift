@@ -1,4 +1,5 @@
 import AppKit
+import MacKitOverlay
 import QuickLookUI
 @preconcurrency import Carbon
 import SwiftUI
@@ -8,8 +9,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private let model: HistoryPanelModel
     private var hostingView: NSHostingView<HistoryPanelView>?
     private var keyMonitor: Any?
-    private var outsideClickMonitor: Any?
-    private var outsideClickLocalMonitor: Any?
+    private let outsideClickMonitor = OutsideClickMonitor()
     /// 菜单栏本图标等点击后仍应由原入口处理开关，不能当成「点外面」。
     var additionalKeptFrames: () -> [NSRect] = { [] }
     private var previewItem: ClipboardQuickLookItem?
@@ -235,48 +235,30 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     }
 
     private func installOutsideClickMonitor() {
-        removeOutsideClickMonitor()
-        let mouseDown: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
         // 点到别的应用时本窗口往往不会失焦：浮层并不把本应用切到前台，底下那个应用本来就是前台。
         // 必须靠全局按下监听立刻收起，否则会挡屏幕。不要用「本应用失活」来关，否则一打开就会被关掉。
-        outsideClickMonitor = NSEvent.addGlobalMonitorForEvents(matching: mouseDown) { [weak self] _ in
-            let point = NSEvent.mouseLocation
-            self?.performOnMain {
-                self?.handleOutsideMouseDown(at: point, eventWindow: nil)
+        outsideClickMonitor.panelFrame = { [weak self] in self?.frame ?? .zero }
+        outsideClickMonitor.isPanelVisible = { [weak self] in self?.isVisible ?? false }
+        outsideClickMonitor.isOwnWindow = { [weak self] window in
+            guard let self else { return false }
+            if window === self { return true }
+            if let preview = QLPreviewPanel.shared(), window === preview { return true }
+            return Self.isContextMenuWindow(window)
+        }
+        outsideClickMonitor.additionalKeptFrames = { [weak self] in
+            guard let self else { return [] }
+            var kept = self.additionalKeptFrames()
+            if let preview = QLPreviewPanel.shared(), preview.isVisible {
+                kept.append(preview.frame)
             }
+            return kept
         }
-        outsideClickLocalMonitor = NSEvent.addLocalMonitorForEvents(matching: mouseDown) { [weak self] event in
-            guard let self else { return event }
-            let point = event.window?.convertPoint(toScreen: event.locationInWindow) ?? NSEvent.mouseLocation
-            self.handleOutsideMouseDown(at: point, eventWindow: event.window)
-            return event
-        }
+        outsideClickMonitor.onOutsideClick = { [weak self] in self?.hidePanel() }
+        outsideClickMonitor.install()
     }
 
     private func removeOutsideClickMonitor() {
-        if let outsideClickMonitor {
-            NSEvent.removeMonitor(outsideClickMonitor)
-            self.outsideClickMonitor = nil
-        }
-        if let outsideClickLocalMonitor {
-            NSEvent.removeMonitor(outsideClickLocalMonitor)
-            self.outsideClickLocalMonitor = nil
-        }
-    }
-
-    private func handleOutsideMouseDown(at point: NSPoint, eventWindow: NSWindow?) {
-        guard isVisible else { return }
-        if eventWindow === self { return }
-        if let preview = QLPreviewPanel.shared(), eventWindow === preview { return }
-        // 列表右键菜单落在弹出层上：点菜单项不能当成「点外面」关面板。
-        if Self.isContextMenuWindow(eventWindow) { return }
-
-        var kept = [frame] + additionalKeptFrames()
-        if let preview = QLPreviewPanel.shared(), preview.isVisible {
-            kept.append(preview.frame)
-        }
-        guard HistoryPanelDismiss.shouldHide(click: point, keptFrames: kept) else { return }
-        hidePanel()
+        outsideClickMonitor.remove()
     }
 
     private static func isContextMenuWindow(_ window: NSWindow?) -> Bool {

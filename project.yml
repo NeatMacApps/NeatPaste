@@ -101,6 +101,8 @@ targets:
       - package: MacKit
         product: MacKitLifecycle
       - package: MacKit
+        product: MacKitOverlay
+      - package: MacKit
         product: MacKitUpdater
 
   NeatPasteTests:
