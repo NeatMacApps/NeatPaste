@@ -1,5 +1,11 @@
 # 历史常驻内存偏高（2026-09-05）
 
+## 权威
+
+跨产品模式（元数据常驻、载荷磁盘旁路、禁止为省内存只留纯文本、主 KPI 用 footprint）：
+
+→ [macOS 原生应用内存优化指南 §5.7](~/.config/agentsync/docs/MACOS_APP_MEMORY_OPTIMIZATION_GUIDE.md)
+
 ## 症状触发词
 
 活动监视器里 NeatPaste 占一百多兆、内存比想象中大、物理占用峰值突然冲到几百兆、Application Support 里 `history.json` 很大、复制几张截图后内存明显涨。
@@ -10,37 +16,22 @@
 
 | 口径 | 量级 | 说明 |
 |---|---|---|
-| 系统 Memory footprint | ~100 MB | `footprint -p <pid>` / `vmmap` 的 Physical footprint，更接近「真实占住」 |
+| 系统 Memory footprint | ~100 MB | `footprint -p <pid>` / `vmmap` 的 Physical footprint |
 | 活动监视器常看的 RSS | ~160 MB | 含可回收页，数字会偏高 |
-| 进程峰值 footprint | 可到 ~600 MB | 读写超大 `history.json` 编解码时会出现，不是稳态 |
-| 本机历史文件 | `~/Library/Application Support/NeatPaste/history.json` | 体积与稳态 footprint 同量级时，优先怀疑「整包进内存」而不是泄漏 |
+| 进程峰值 footprint | 可到 ~600 MB | 读写超大 `history.json` 编解码时尖刺 |
+| 本机历史文件 | `~/Library/Application Support/NeatPaste/history.json` | 体积与稳态 footprint 同量级 → 优先怀疑整包进内存 |
 
-堆里大头通常是 Foundation 的数据块（剪贴板原始字节），不是界面。
+## 本产品落地
 
-## 根因（已核实）
-
-1. **旧实现把 7 天历史整包常驻内存。** 单文件 JSON 含全部格式的 Base64；启动解码后每条的图片字节都挂在列表里。
-2. **体积几乎全是图片，且同一图存了多套格式。** 旧名与 `public.*` 名还会各存一份几乎相同的 TIFF（或 PNG）。
-3. **峰值尖刺来自整文件 JSON + Base64。** 编解码时还会再有一份临时缓冲。
-
-## 已落地设计（2026-09-05）
-
-产品契约已钉死：
-
-- 完整图片字节**不常驻内存**；磁盘旁路目录保留全部可用格式，粘贴不降级。
 - `history.json` 只留元数据与小载荷；图片与大于 64KB 的非图片载荷进 `payloads/<条目ID>/`。
-- 同字节多类型名只存一份文件，粘贴仍按原类型名写回。
-- 去重用收录时算好的内容指纹，不为比对整图常驻。
-- 列表缩略图按需读盘并缓存；预览优先直接用旁路图片文件。
-
-禁止：为了省内存只留纯文本、拿掉重启后仍在的持久化、引入 SwiftData / Core Data / GRDB、把图片改成只留一种格式再派生。
+- 同字节多类型名只存一份文件；去重用收录时内容指纹；缩略图按需读盘。
+- 产品专有禁令：不引入 SwiftData / Core Data / GRDB；粘贴不降级格式。
 
 ## 验收口径
 
-1. 冷启动稳态 footprint 应明显低于旁路图片总盘占；不再与旧胖 `history.json` 同量级挂钩（本机迁移后二次冷启约 ~45–50 MB footprint，相对优化前 ~100 MB+）。
+1. 冷启动稳态 footprint 应明显低于旁路图片总盘占（本机迁移后二次冷启约 ~45–50 MB，相对优化前 ~100 MB+）。
 2. `history.json` 应变瘦；`payloads/` 有对应文件。
-3. 复制大图 → 面板有缩略图 → 空格预览 → 回车粘贴，格式不降级。
-4. 再复制同一图仍去重顶置；过期清理会删对应旁路目录。
-5. 旧胖 JSON 启动时迁移外置，条目仍在。**首次迁移当次**可能短暂尖刺（解码旧文件），迁移写盘完成后再冷启才看稳态。
+3. 复制大图 → 缩略图 → 空格预览 → 回车粘贴，格式不降级；去重顶置；过期清理删旁路目录。
+4. 旧胖 JSON 首次迁移当次可能短暂尖刺；迁移完成后再冷启看稳态。
 
 <!-- 该文档整理/压缩于 2026-09-05 -->
