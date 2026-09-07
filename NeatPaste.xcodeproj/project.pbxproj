@@ -827,7 +827,7 @@
 			repositoryURL = "https://github.com/x0c/mac-kit-swift";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.2;
+				minimumVersion = 0.1.4;
 			};
 		};
 		E79E7210C0A68272EB274A83 /* XCRemoteSwiftPackageReference "Sparkle" */ = {

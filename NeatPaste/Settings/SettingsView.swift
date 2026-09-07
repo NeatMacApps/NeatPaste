@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -11,9 +12,11 @@ struct SettingsView: View {
             launchAtLoginSection
             menuBarIconSection
             ignoredAppsSection
+            // 右键菜单对等入口：藏图标后仍能从设置窗完成这些操作。
+            actionsSection
         }
         .formStyle(.grouped)
-        .frame(minWidth: 420, minHeight: 380)
+        .frame(minWidth: 420, minHeight: 460)
         .padding(.bottom, 8)
         .focusEffectDisabled()
         .onAppear {
@@ -122,6 +125,34 @@ struct SettingsView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var actionsSection: some View {
+        Section(String(localized: "settings.actions.section")) {
+            Button(String(localized: "menu.openPanel")) {
+                AppDelegate.shared?.showPanel()
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.checkForUpdates")) {
+                AppDelegate.shared?.checkForUpdates()
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.about")) {
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.orderFrontStandardAboutPanel(options: [
+                    .applicationName: "NeatPaste",
+                    .credits: NSAttributedString(string: String(localized: "about.credits"))
+                ])
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.quit")) {
+                AppDelegate.shared?.requestTermination()
+            }
+            .focusEffectDisabled()
         }
     }
 }

@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var commaMonitor: Any?
     private let appUpdater = SparkleUpdateChecker()
     private let terminationGuard = TerminationGuard()
+    /// 后台就绪时刻；二次启动防呆用 `secondsSinceReady`。
+    private var readyAt = Date()
 
     let history: InMemoryHistoryStore
     let clipboardMonitor: ClipboardMonitor
@@ -80,6 +82,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         let isLoginLaunch = LoginLaunchDetector.isLaunchedAsLoginItem
+        readyAt = Date()
+        // 冷启动只按「图标已隐藏」出示恢复窗；不要把首次启动当成二次打开。
         if MenuBarReopenPolicy.shouldShowRecoveryWindow(
             iconVisible: AppPreferences.shared.isMenuBarIconVisible,
             isLoginLaunch: isLoginLaunch
@@ -97,12 +101,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // 图标隐藏时出示恢复窗；不要开关历史面板——点外面关的浮层不能当恢复面。
+        // 菜单栏即主入口：时间窗内二次打开须出配置/恢复面（与图标是否可见无关）；
+        // 图标隐藏时永远出恢复窗。不要开关历史面板——点外面关的浮层不能当恢复面。
+        let iconVisible = AppPreferences.shared.isMenuBarIconVisible
         if MenuBarReopenPolicy.presentation(
-            iconVisible: AppPreferences.shared.isMenuBarIconVisible,
-            isReopenOrLaunch: true
+            iconVisible: iconVisible,
+            isReopenOrLaunch: true,
+            isLoginLaunch: false,
+            menubarIsPrimaryEntry: true,
+            secondsSinceReady: Date().timeIntervalSince(readyAt)
         ) == .showRecoveryWindow {
-            showRecoveryWindow()
+            if iconVisible {
+                SettingsWindowController.shared.show()
+            } else {
+                showRecoveryWindow()
+            }
         }
         return true
     }

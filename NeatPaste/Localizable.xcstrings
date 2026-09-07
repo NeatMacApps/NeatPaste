@@ -829,6 +829,24 @@
         }
       }
     },
+    "settings.actions.section": {
+      "comment": "Settings actions matching status menu parity",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Actions"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "操作"
+          }
+        }
+      }
+    },
     "settings.title": {
       "comment": "Settings window title",
       "extractionState": "manual",

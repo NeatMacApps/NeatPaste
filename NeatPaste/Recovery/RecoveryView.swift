@@ -1,6 +1,7 @@
+import AppKit
 import SwiftUI
 
-/// 轻量恢复窗口：说明应用仍在跑，并提供开机自启动、检查更新、显示菜单栏图标。
+/// 轻量恢复窗口：说明应用仍在跑，并提供右键菜单对等能力（含开机自启、检查更新、显示图标、退出）。
 struct RecoveryView: View {
     @Bindable private var preferences = AppPreferences.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
@@ -43,11 +44,6 @@ struct RecoveryView: View {
                     .foregroundStyle(.secondary)
             }
 
-            Button(String(localized: "menu.checkForUpdates")) {
-                AppDelegate.shared?.checkForUpdates()
-            }
-            .focusEffectDisabled()
-
             Toggle(
                 String(localized: "settings.menuBarIcon.toggle"),
                 isOn: Binding(
@@ -55,6 +51,35 @@ struct RecoveryView: View {
                     set: { preferences.setMenuBarIconVisible($0) }
                 )
             )
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.openPanel")) {
+                AppDelegate.shared?.showPanel()
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.settings")) {
+                SettingsWindowController.shared.show()
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.checkForUpdates")) {
+                AppDelegate.shared?.checkForUpdates()
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.about")) {
+                NSApp.activate(ignoringOtherApps: true)
+                NSApp.orderFrontStandardAboutPanel(options: [
+                    .applicationName: "NeatPaste",
+                    .credits: NSAttributedString(string: String(localized: "about.credits"))
+                ])
+            }
+            .focusEffectDisabled()
+
+            Button(String(localized: "menu.quit")) {
+                AppDelegate.shared?.requestTermination()
+            }
             .focusEffectDisabled()
         }
         .padding(24)
