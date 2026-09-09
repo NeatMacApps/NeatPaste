@@ -3,7 +3,7 @@
 # NeatPaste
 
 <p align="center">
-  <img src="design/app-icon/AppIcon-1024.png" width="128" height="128" alt="NeatPaste 应用图标">
+  <img src="docs/images/app-icon.png" width="128" height="128" alt="NeatPaste 应用图标">
 </p>
 
 NeatPaste 是一款 **macOS 剪贴板历史管理器**。它待在菜单栏，记下你复制过的内容，用全局快捷键唤出面板，把选中的一条粘贴回你刚才正在输入的应用。
