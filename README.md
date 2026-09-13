@@ -3,10 +3,10 @@
 # NeatPaste
 
 <p align="center">
-  <img src="design/app-icon/AppIcon-1024.png" width="128" height="128" alt="NeatPaste app icon">
+  <img src="docs/images/app-icon.png" width="128" height="128" alt="NeatPaste app icon">
 </p>
 
-NeatPaste is a **macOS clipboard history manager**. It lives in the menu bar, records what you copy, and lets you pick a recent item with a global shortcut so you can paste it back into the app you were typing in.
+**macOS clipboard manager in the menu bar.** Keep what you copy in a local history, then pick an item with a global shortcut and paste it back where you were typing.
 
 This is a macOS clipboard history manager, unrelated to the iOS text-cleaning app of the same name.
 
