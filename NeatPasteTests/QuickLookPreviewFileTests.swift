@@ -51,6 +51,39 @@ final class QuickLookPreviewFileTests: XCTestCase {
         XCTAssertEqual(url.standardizedFileURL, file.standardizedFileURL)
     }
 
+    func test_图片条目旁路优先于仍存在的非图片fileurl() throws {
+        let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")!
+        let textFile = FileManager.default.temporaryDirectory
+            .appendingPathComponent("neatpaste-ql-stale-\(UUID().uuidString).txt")
+        try "stale caption".write(to: textFile, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: textFile) }
+
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("neatpaste-ql-vault-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+
+        let id = UUID()
+        let vault = PayloadVault(rootURL: dir)
+        _ = try vault.spill(itemID: id, payloads: ["public.png": png])
+
+        let item = HistoryItem(
+            id: id,
+            createdAt: Date(),
+            plainText: "stale caption",
+            sourceBundleID: nil,
+            hasImage: true,
+            types: ["public.png"],
+            payloads: ["public.file-url": Data(textFile.absoluteString.utf8)],
+            externalPayloadTypes: ["public.png"],
+            payloadDirectoryURL: dir
+        )
+
+        let url = try QuickLookPreviewFile.makeURL(for: item)
+        XCTAssertNotEqual(url.standardizedFileURL, textFile.standardizedFileURL)
+        XCTAssertEqual(try Data(contentsOf: url), png)
+    }
+
     func test_预览窗默认尺寸保持小窗() {
         XCTAssertEqual(AppPreferences.quickLookSize, NSSize(width: 480, height: 360))
         XCTAssertLessThanOrEqual(AppPreferences.quickLookMaxSize.width, 560)

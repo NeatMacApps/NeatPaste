@@ -8,6 +8,9 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            if !preferences.isMenuBarIconVisible {
+                runningStatusSection
+            }
             hotkeySection
             launchAtLoginSection
             menuBarIconSection
@@ -24,6 +27,20 @@ struct SettingsView: View {
         }
         .onDisappear {
             hotkeyManager.stopRecording()
+        }
+    }
+
+    private var runningStatusSection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(String(localized: "recovery.running.title"))
+                    .font(.headline)
+                Text(String(localized: "recovery.running.detail"))
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.vertical, 4)
         }
     }
 

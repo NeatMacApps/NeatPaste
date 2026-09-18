@@ -25,7 +25,19 @@ nonisolated enum HistoryThumbnail: Sendable {
         if let data = item.imageBytes() {
             return downsample(data: data)
         }
-        if let url = QuickLookPreviewFile.existingFileURL(in: item) {
+        if item.hasImage,
+           let root = item.payloadDirectoryURL,
+           !item.externalPayloadTypes.isEmpty,
+           let materialized = try? PayloadVault(rootURL: root).materialize(
+               itemID: item.id,
+               inline: item.payloads,
+               externalTypes: item.externalPayloadTypes
+           ),
+           let data = HistoryItem.preferredImageData(from: materialized) {
+            return downsample(data: data)
+        }
+        if let url = QuickLookPreviewFile.existingFileURL(in: item),
+           QuickLookPreviewFile.isImageFile(at: url) {
             return downsample(url: url)
         }
         return nil

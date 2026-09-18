@@ -1218,3 +1218,32 @@ The staple and validate action worked!
 ✓ 已产出可双击直接打开的 dmg：/Users/geraltgraham/Codes/NeatPaste/app-macos/build/NeatPaste-1.0.8.dmg
 
 [1;34m▶ 提交改动并打 tag[0m
+leakgate: 发现 68 条非阻断提示（档位 public，未拦截本次 push）。完整报告可跑: python3 /Users/geraltgraham/.config/agentsync/scripts/leakgate/leakgate.py scan
+To https://github.com/NeatMacApps/NeatPaste.git
+   761d048..12292be  main -> main
+leakgate: 发现 78 条非阻断提示（档位 public，未拦截本次 push）。完整报告可跑: python3 /Users/geraltgraham/.config/agentsync/scripts/leakgate/leakgate.py scan
+To https://github.com/NeatMacApps/NeatPaste.git
+ * [new tag]         v1.0.8 -> v1.0.8
+
+[1;34m▶ 发布 GitHub Release（先建空再传 dmg + 更新 zip）[0m
+https://github.com/NeatMacApps/NeatPaste/releases/tag/v1.0.8
+
+[1;34m▶ 更新公开 appcast（随源码仓发布）[0m
+To https://github.com/NeatMacApps/NeatPaste.git
+   12292be..c010585  main -> main
+
+[1;34m▶ 更新 Homebrew cask（防版本回退）[0m
+Cloning into '/var/folders/vh/rjmstnq923sd_d1w8mn9c0fw0000gn/T/tmp.ICV4TB6HSI/homebrew-tap'...
+[main c3588ee] neatpaste 1.0.8
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+To github.com:x0c/homebrew-tap.git
+   5fd2db5..c3588ee  HEAD -> main
+
+[1;34m▶ 匿名下载与更新清单终检[0m
+
+[1;34m▶ 发布完成[0m
+版本：v1.0.8（内部构建号 9）
+首次安装：https://github.com/NeatMacApps/NeatPaste/releases/latest
+一键安装：brew tap x0c/tap && brew install --cask neatpaste
+自动更新：https://raw.githubusercontent.com/NeatMacApps/NeatPaste/main/appcast.xml
+状态：安装包可匿名下载，已完成 Sparkle 签名、Developer ID 签名、苹果公证与票据装订
