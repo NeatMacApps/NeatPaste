@@ -1,5 +1,6 @@
 import AppKit
 import MacKitOverlay
+import QuartzCore
 import QuickLookUI
 import SwiftUI
 
@@ -18,6 +19,13 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private let dismissHotkey = PreviewDismissHotkey()
     private let arrowRepeat = ArrowKeyRepeat()
     private var clickThroughEater: ClickThroughEater?
+    private var contentPin: PinnedContentHost?
+    private var currentPlacement: PanelAnchor.Placement?
+    private var motionGeneration = 0
+    private var isDismissing = false
+
+    /// Visible and not in the middle of shrinking away. Hotkey toggle uses this.
+    var isPresented: Bool { isVisible && !isDismissing }
 
     init(model: HistoryPanelModel) {
         self.model = model
@@ -41,8 +49,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         maxSize = AppPreferences.panelSize
 
         let hosting = NSHostingView(rootView: HistoryPanelView(model: model))
-        hosting.frame = contentRect(forFrameRect: frame)
-        hosting.autoresizingMask = [.width, .height]
         hosting.wantsLayer = true
         hosting.layer?.backgroundColor = NSColor.clear.cgColor
         hostingView = hosting
@@ -94,13 +100,66 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     func hasPublicMainAppearanceForGlass() -> Bool { true }
 
     func showPanel(frame: NSRect? = nil) {
+        if let frame {
+            showPanel(placement: PanelAnchor.placement(frame: frame, preferredRect: nil))
+        } else {
+            showPanel(placement: PanelAnchor.placement(for: AppPreferences.panelSize))
+        }
+    }
+
+    func showPanel(placement: PanelAnchor.Placement) {
         clickThroughEater?.cancel()
         clickThroughEater = nil
-        setFrame(frame ?? PanelAnchor.frame(for: AppPreferences.panelSize), display: true)
+        isDismissing = false
+        ignoresMouseEvents = false
+        motionGeneration += 1
+        let generation = motionGeneration
+        currentPlacement = placement
+        contentPin?.pinsToTop = placement.pinsContentToTop
+        unlockSizeForMotion()
+
+        let resumeFromCurrent = isVisible
+        if !resumeFromCurrent {
+            if PanelMotion.prefersReducedMotion {
+                setFrame(placement.frame, display: true)
+            } else {
+                setFrame(placement.seed, display: true)
+            }
+            hostingView?.alphaValue = 0
+            alphaValue = PanelMotion.prefersReducedMotion ? 0 : 1
+        }
+
         orderFrontRegardless()
         makeKey()
         installKeyMonitor()
         installOutsideClickMonitor()
+        contentPin?.needsLayout = true
+        contentPin?.layoutSubtreeIfNeeded()
+
+        if PanelMotion.prefersReducedMotion {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = PanelMotion.reducedDuration
+                context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                animator().alphaValue = 1
+                hostingView?.animator().alphaValue = 1
+            } completionHandler: { [weak self] in
+                guard let self, generation == self.motionGeneration else { return }
+                self.lockSizeAfterMotion(placement.frame)
+            }
+            return
+        }
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = PanelMotion.appearDuration
+            context.timingFunction = PanelMotion.appearTiming
+            context.allowsImplicitAnimation = true
+            animator().setFrame(placement.frame, display: true)
+            hostingView?.animator().alphaValue = 1
+            alphaValue = 1
+        } completionHandler: { [weak self] in
+            guard let self, generation == self.motionGeneration else { return }
+            self.lockSizeAfterMotion(placement.frame)
+        }
     }
 
     /// 鼠标粘贴后挡住双击收尾那一下，避免点穿到正在输入的窗口。
@@ -116,13 +175,87 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         closeQuickLook()
         removeKeyMonitor()
         removeOutsideClickMonitor()
-        orderOut(nil)
+
+        guard isVisible else {
+            finishHide()
+            return
+        }
+        if isDismissing {
+            return
+        }
+
+        isDismissing = true
+        ignoresMouseEvents = true
+        motionGeneration += 1
+        let generation = motionGeneration
+        unlockSizeForMotion()
+
+        // Paste injects ⌘V immediately after hide. Stop taking keys now;
+        // the glass can still recede visually.
+        if isKeyWindow {
+            resignKey()
+        }
+
+        let seed = currentPlacement?.seed ?? NSRect(
+            x: frame.midX - PanelAnchor.seedLength / 2,
+            y: frame.midY - PanelAnchor.seedLength / 2,
+            width: PanelAnchor.seedLength,
+            height: PanelAnchor.seedLength
+        )
+
+        if PanelMotion.prefersReducedMotion {
+            NSAnimationContext.runAnimationGroup { context in
+                context.duration = PanelMotion.reducedDuration
+                context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                animator().alphaValue = 0
+            } completionHandler: { [weak self] in
+                guard let self, generation == self.motionGeneration else { return }
+                self.finishHide()
+            }
+            return
+        }
+
+        NSAnimationContext.runAnimationGroup { context in
+            context.duration = PanelMotion.dismissDuration
+            context.timingFunction = PanelMotion.dismissTiming
+            context.allowsImplicitAnimation = true
+            animator().setFrame(seed, display: true)
+            hostingView?.animator().alphaValue = 0
+        } completionHandler: { [weak self] in
+            guard let self, generation == self.motionGeneration else { return }
+            self.finishHide()
+        }
     }
 
     override func resignKey() {
         super.resignKey()
+        if isDismissing || !isVisible { return }
         if isPresentingQuickLook || isQuickLookVisible { return }
         hidePanel()
+    }
+
+    private func unlockSizeForMotion() {
+        minSize = NSSize(width: 8, height: 8)
+        maxSize = NSSize(width: 10_000, height: 10_000)
+    }
+
+    private func lockSizeAfterMotion(_ frame: NSRect) {
+        setFrame(frame, display: true)
+        minSize = AppPreferences.panelSize
+        maxSize = AppPreferences.panelSize
+        alphaValue = 1
+        hostingView?.alphaValue = 1
+        contentPin?.needsLayout = true
+    }
+
+    private func finishHide() {
+        hostingView?.alphaValue = 1
+        alphaValue = 1
+        minSize = AppPreferences.panelSize
+        maxSize = AppPreferences.panelSize
+        ignoresMouseEvents = false
+        orderOut(nil)
+        isDismissing = false
     }
 
     nonisolated override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
@@ -454,11 +587,15 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
 
     private func makeChromeView(_ hostingView: NSHostingView<HistoryPanelView>) -> NSView {
         let frame = NSRect(origin: .zero, size: AppPreferences.panelSize)
+        let pin = PinnedContentHost(hosted: hostingView, fullSize: AppPreferences.panelSize)
+        pin.frame = frame
+        pin.autoresizingMask = [.width, .height]
+        contentPin = pin
         if #available(macOS 26.0, *) {
             let glass = PanelGlassView(frame: frame, cornerRadius: AppPreferences.panelCornerRadius)
             glass.autoresizingMask = [.width, .height]
             glass.clipsToBounds = true
-            glass.contentView = hostingView
+            glass.contentView = pin
             return glass
         }
 
@@ -470,9 +607,44 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         effect.wantsLayer = true
         effect.layer?.cornerRadius = AppPreferences.panelCornerRadius
         effect.layer?.masksToBounds = true
-        effect.addSubview(hostingView)
-        hostingView.frame = effect.bounds
-        hostingView.autoresizingMask = [.width, .height]
+        effect.addSubview(pin)
+        pin.frame = effect.bounds
         return effect
+    }
+}
+
+/// Keeps list content at its real size while the glass window grows from a droplet.
+private final class PinnedContentHost: NSView {
+    var pinsToTop = true {
+        didSet { needsLayout = true }
+    }
+
+    private let fullSize: NSSize
+    private let hosted: NSView
+
+    init(hosted: NSView, fullSize: NSSize) {
+        self.hosted = hosted
+        self.fullSize = fullSize
+        super.init(frame: .zero)
+        addSubview(hosted)
+    }
+
+    @available(*, unavailable)
+    required init?(coder: NSCoder) {
+        fatalError("PinnedContentHost is not archived")
+    }
+
+    override func layout() {
+        super.layout()
+        if pinsToTop {
+            hosted.frame = NSRect(
+                x: 0,
+                y: bounds.height - fullSize.height,
+                width: fullSize.width,
+                height: fullSize.height
+            )
+        } else {
+            hosted.frame = NSRect(origin: .zero, size: fullSize)
+        }
     }
 }

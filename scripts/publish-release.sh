@@ -236,10 +236,9 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- Launch at login (pending approval is not shown as on)
-- Hide menu bar icon; recovery window to restore it (history panel is not the recovery surface)
-- Check for Updates in the menu
-- Clicking outside the history panel dismisses it
+- History panel left-aligns with the caret and stays off the line you are typing
+- Opening and closing the panel expands from the caret as fast liquid glass
+- One settings window; hiding the menu bar icon no longer uses a separate recovery window
 EOF
 
 appcast_dir="${work_dir}/appcast"

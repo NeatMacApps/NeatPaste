@@ -24,7 +24,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 ## 钉死的体验
 
-打开面板默认选中最新一条；回车粘贴；再点已选中的条目或双击同样粘贴；列表条目右键可删除（立刻生效、不弹确认）；空格用系统 Quick Look 预览当前条；按住上下键连续移动选择（预览开着同样如此）；点面板外立刻关掉；图片出缩略图；相同内容只留一条、再复制则顶到最上；历史只保留 7 天且重启后仍在；完整图片字节不常驻内存、磁盘保留全格式按需加载；探测间隔 0.5 秒；面板出现在输入光标附近；文本和图片同一行高；不把内容格式降级。菜单栏图标默认显示，可隐藏；隐藏后用独立恢复窗口找回，不要把历史面板改成常驻。开机自启等待批准时不能显示成已开启。权威说明见产品契约。
+打开面板默认选中最新一条；回车粘贴；再点已选中的条目或双击同样粘贴；列表条目右键可删除（立刻生效、不弹确认）；空格用系统 Quick Look 预览当前条；按住上下键连续移动选择（预览开着同样如此）；点面板外立刻关掉；图片出缩略图；相同内容只留一条、再复制则顶到最上；历史只保留 7 天且重启后仍在；完整图片字节不常驻内存、磁盘保留全格式按需加载；探测间隔 0.5 秒；面板左边界对齐输入光标、完整让开当前输入行；进出场从光标撑开通透玻璃、要快无回弹；文本和图片同一行高；不把内容格式降级。菜单栏图标默认显示，可隐藏；隐藏后用独立恢复窗口找回，不要把历史面板改成常驻。开机自启等待批准时不能显示成已开启。权威说明见产品契约。
 
 ## 基线豁免（第一波）
 
@@ -46,7 +46,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 - [app-macos/AGENTS.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/AGENTS.md)：改、评审或排查 macOS 客户端工程、面板、预览窗、热键、菜单栏、去重、光标锚点、收录探测或覆盖安装前**必读**。不读会把面板做成抢焦点、用错菜单栏实现，把预览限尺寸拿掉，漏收刚复制的内容，或覆盖安装把签名装坏。
 - [app-macos/docs/PRODUCT_CONTRACT.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/PRODUCT_CONTRACT.md)：改、评审或排查任何用户可见行为、历史保留、粘贴、收录探测、预览、去重、面板位置、列表右键删除、隐藏菜单栏图标、恢复窗口、开机自启三态与「明确不做」的范围前**必读**。不读会把已钉死的体验改掉，把历史浮层当成恢复面，或把后续不做的能力做进去。
-- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
+- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、挡住输入行、没有和光标齐左、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，把面板居中盖住已输入文字，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
 - [app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
 - [app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md](/Users/geraltgraham/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md)：改、评审或排查活动监视器内存偏高、历史文件很大、复制截图后占用暴涨，或打算压历史内存前**必读**。不读会把整包常驻误判成泄漏，或为了省内存改成只留纯文本、拿掉重启后仍在的持久化。
 - [../_standards/swift.md](/Users/geraltgraham/Codes/_standards/swift.md)：新建、评审或改造本 macOS 应用前**必读**。不读会偏离开源 Mac 应用的签名、本地化、无蓝框和覆盖安装闭环。
@@ -90,7 +90,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 ## 钉死的实现约束
 
 - **面板禁止激活本应用。** 打开历史面板时不得把本应用切到前台，否则回车粘贴会贴到自己身上。用非激活浮层、`orderFrontRegardless()` + `makeKey()`，不要走会抢焦点的激活。恢复窗口是普通带标题栏窗口，**可以**激活；出示恢复窗口前先关掉历史面板。不要把这两套规则混用。
-- **隐藏菜单栏图标必须另有恢复窗口。** 继续用本地状态项保住左键开关面板；用 `isVisible` 显隐图标。**点隐藏只记偏好、撤掉图标，禁止立刻出示恢复窗。** 用户主动冷启动（非登录项）或再次打开、以及菜单「打开主窗口」时才出示恢复窗口，禁止 toggle 历史面板。登录项拉起一律静默。点外面即关的历史面板不能当恢复面，也不要改成常驻。`menuBar.iconVisible` 默认显示。藏图标会触发系统 terminate，必须走退出守卫，用户没点退出不能真退；最后一扇窗口关掉后应用继续运行。
+- **隐藏菜单栏图标必须另有恢复入口。** 继续用本地状态项保住左键开关面板；用 `isVisible` 显隐图标。**点隐藏只记偏好、撤掉图标，禁止立刻出示设置窗。** 用户主动冷启动（非登录项）或再次打开时才出示**唯一设置窗**（内含「仍在运行」说明与全部配置），禁止 toggle 历史面板，禁止再单独做恢复窗。登录项拉起一律静默。点外面即关的历史面板不能当恢复面，也不要改成常驻。`menuBar.iconVisible` 默认显示。藏图标会触发系统 terminate，必须走退出守卫，用户没点退出不能真退；最后一扇窗口关掉后应用继续运行。
 - **点未选中只改选中，再点已选中或双击才粘贴。** 不要做成「点一下就粘贴」。打开后面板已默认选中最新一条，点它就应粘贴。鼠标粘贴关掉面板后，双击收尾那一下会点穿到下面的窗口，必须先挡住再关。
 - **上下键连发必须自己做。** 非激活浮层往往收不到系统按键连发；把按下吞掉后系统也可能不再连发。必须在按下时记下方向、按系统连发延迟/间隔自己连续移动，抬起、键已松开或关掉面板时停。系统连发事件若仍到达则丢掉，避免跳两格。不要为了连发把本应用切到前台。预览打开时按键走临时热键，热键只响一次、不会连发，必须从这条路径同样启动按住连走；不要为了连发把焦点抢回列表。热键、预览窗、列表可能同时收到第一次按下，已按住则不再走步。
 - **历史面板尺寸固定。** 不要加可缩放；每次打开都用规定默认尺寸。列表可滚，不要显示滚动条。Mac 接鼠标时系统会无视「尽量隐藏」，必须强制永不显示；不要为了藏条去关掉滚轮。踩坑见 [docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)。
@@ -149,7 +149,7 @@ open /Applications/NeatPaste.app
 ## 文档导航
 
 - [docs/PRODUCT_CONTRACT.md](docs/PRODUCT_CONTRACT.md)：改、评审或排查面板、粘贴、历史保留、收录探测、预览、去重、面板位置、列表右键删除、快捷键默认值、隐藏菜单栏图标、恢复窗口、开机自启三态或「明确不做」范围前**必读**。不读会把已钉死的体验改掉，或把历史浮层当成恢复面。
-- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、列表没收录、预览尺寸异常、面板锚点错误、历史内存偏高等**排查类**任务前**必读**；权威源在索引内各篇，根导航不再平铺。已知是产品契约取舍而非异常时跳过本索引，改读产品契约。
+- [docs/troubleshooting/TROUBLESHOOTING_INDEX.md](docs/troubleshooting/TROUBLESHOOTING_INDEX.md)：报错、列表没收录、预览尺寸异常、面板锚点错误、挡住输入行、没有和光标齐左、历史内存偏高等**排查类**任务前**必读**；权威源在索引内各篇，根导航不再平铺。已知是产品契约取舍而非异常时跳过本索引，改读产品契约。
 - [../../_standards/swift.md](../../_standards/swift.md)：改本仓库代码、工程或验证方式前**必读**。不读会偏离 Swift 6 并发基线和覆盖安装闭环。
 - [../../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md](../../_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md)：改菜单栏生命周期、浮层、退出拦截、系统剪贴板收录/写回或本机冒烟日志前**必读**。不读会在新系统上被自动退出，或漏收刚复制的内容。
 - [../../_standards/workspace-docs/swift-docs/liquid-glass-practices.md](../../_standards/workspace-docs/swift-docs/liquid-glass-practices.md)：改面板材质前**必读**。不读会让列表文字落在不干净的底上。

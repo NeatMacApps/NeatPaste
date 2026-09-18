@@ -83,12 +83,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
         let isLoginLaunch = LoginLaunchDetector.isLaunchedAsLoginItem
         readyAt = Date()
-        // 冷启动只按「图标已隐藏」出示恢复窗；不要把首次启动当成二次打开。
+        // 冷启动：图标已隐藏时出示唯一设置窗；不要把首次启动当成二次打开。
         if MenuBarReopenPolicy.shouldShowRecoveryWindow(
             iconVisible: AppPreferences.shared.isMenuBarIconVisible,
             isLoginLaunch: isLoginLaunch
         ) {
-            showRecoveryWindow()
+            showMainWindow()
         }
     }
 
@@ -101,8 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        // 菜单栏即主入口：时间窗内二次打开须出配置/恢复面（与图标是否可见无关）；
-        // 图标隐藏时永远出恢复窗。不要开关历史面板——点外面关的浮层不能当恢复面。
+        // 菜单栏即主入口：时间窗内二次打开或图标隐藏时须出唯一设置窗。不要开关历史面板。
         let iconVisible = AppPreferences.shared.isMenuBarIconVisible
         if MenuBarReopenPolicy.presentation(
             iconVisible: iconVisible,
@@ -111,11 +110,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             menubarIsPrimaryEntry: true,
             secondsSinceReady: Date().timeIntervalSince(readyAt)
         ) == .showRecoveryWindow {
-            if iconVisible {
-                SettingsWindowController.shared.show()
-            } else {
-                showRecoveryWindow()
-            }
+            showMainWindow()
         }
         return true
     }
@@ -136,7 +131,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func togglePanel() {
         guard let panel else { return }
-        if panel.isVisible {
+        if panel.isPresented {
             panel.hidePanel()
         } else {
             showPanel()
@@ -146,7 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     func showPanel(preservingAccessibilityPrompt: Bool = false) {
         guard let panel else { return }
         // 必须在异步刷新之前记下光标，否则面板一旦成为焦点就只能锚到自己身上。
-        let frame = PanelAnchor.frame(for: AppPreferences.panelSize)
+        let placement = PanelAnchor.placement(for: AppPreferences.panelSize)
         let keepPrompt = preservingAccessibilityPrompt || panelModel.needsAccessibilityPrompt
         Task { @MainActor in
             await clipboardMonitor.poll()
@@ -154,7 +149,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if keepPrompt {
                 panelModel.needsAccessibilityPrompt = true
             }
-            panel.showPanel(frame: frame)
+            panel.showPanel(placement: placement)
         }
     }
 
@@ -162,10 +157,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         statusItemController?.isVisible = AppPreferences.shared.isMenuBarIconVisible
     }
 
-    /// 出示恢复窗口前先关掉历史面板，避免激活本应用后粘贴贴到自己身上。
-    func showRecoveryWindow() {
+    /// 唯一配置面：隐藏图标后再次打开应用、或二次启动防呆时出示设置窗（不再单独做恢复窗）。
+    func showMainWindow() {
         panel?.hidePanel()
-        RecoveryWindowController.shared.show()
+        SettingsWindowController.shared.show()
+    }
+
+    func showRecoveryWindow() {
+        showMainWindow()
     }
 
     func checkForUpdates() {

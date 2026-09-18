@@ -7,8 +7,25 @@ enum PanelAnchor {
     /// 过大的输入框（整页编辑器、网页）不能当光标用，否则面板会落到窗口最底下。
     nonisolated static let largeFieldHeight: CGFloat = 140
     nonisolated static let largeFieldWidth: CGFloat = 720
+    /// Keep the panel off the current text line, including short caret rects.
+    nonisolated static let minLineHeight: CGFloat = 16
+    nonisolated static let caretGap: CGFloat = 12
+    nonisolated static let screenInset: CGFloat = 8
 
     static func frame(for size: NSSize) -> NSRect {
+        placement(for: size).frame
+    }
+
+    nonisolated struct Placement: Equatable, Sendable {
+        var frame: NSRect
+        var seed: NSRect
+        var pinsContentToTop: Bool
+    }
+
+    /// Small glass droplet at the caret-adjacent corner of the final panel.
+    nonisolated static let seedLength: CGFloat = 36
+
+    static func placement(for size: NSSize) -> Placement {
         let preferred = preferredAnchorRect()
         let screen = targetScreen(preferredRect: preferred)
         let visible = screen.visibleFrame
@@ -17,25 +34,66 @@ enum PanelAnchor {
             height: min(size.height, max(180, visible.height - 16))
         )
         let origin = origin(for: clampedSize, on: visible, preferredRect: preferred)
-        return NSRect(origin: origin, size: clampedSize)
+        let frame = NSRect(origin: origin, size: clampedSize)
+        return placement(frame: frame, preferredRect: preferred)
     }
 
+    nonisolated static func placement(frame: NSRect, preferredRect: NSRect?) -> Placement {
+        Placement(
+            frame: frame,
+            seed: seedRect(for: frame, preferredRect: preferredRect),
+            pinsContentToTop: pinsContentToTop(frame: frame, preferredRect: preferredRect)
+        )
+    }
+
+    /// Panel below the caret grows from the top-left; panel above grows from the bottom-left.
+    nonisolated static func pinsContentToTop(frame: NSRect, preferredRect: NSRect?) -> Bool {
+        guard let preferredRect else { return true }
+        return frame.midY < lineClearingRect(preferredRect).midY
+    }
+
+    nonisolated static func seedRect(for frame: NSRect, preferredRect: NSRect?) -> NSRect {
+        let length = min(seedLength, frame.width, frame.height)
+        let y: CGFloat
+        if pinsContentToTop(frame: frame, preferredRect: preferredRect) {
+            y = frame.maxY - length
+        } else {
+            y = frame.minY
+        }
+        return NSRect(x: frame.minX, y: y, width: length, height: length)
+    }
+
+    /// Left edge lines up with the caret. The panel sits fully below the
+    /// current line, or fully above when there is no room underneath.
     nonisolated static func origin(for size: NSSize, on visible: NSRect, preferredRect: NSRect?) -> NSPoint {
         var x: CGFloat
         var y: CGFloat
         if let preferredRect {
-            x = preferredRect.midX - size.width / 2
-            y = preferredRect.minY - size.height - 12
-            if y < visible.minY + 8 {
-                y = preferredRect.maxY + 12
+            let line = lineClearingRect(preferredRect)
+            x = line.minX
+            y = line.minY - size.height - caretGap
+            if y < visible.minY + screenInset {
+                y = line.maxY + caretGap
             }
         } else {
             x = visible.midX - size.width / 2
             y = visible.minY + visible.height * 0.62 - size.height / 2
         }
-        x = min(max(x, visible.minX + 8), visible.maxX - size.width - 8)
-        y = min(max(y, visible.minY + 8), visible.maxY - size.height - 8)
+        x = min(max(x, visible.minX + screenInset), visible.maxX - size.width - screenInset)
+        y = min(max(y, visible.minY + screenInset), visible.maxY - size.height - screenInset)
         return NSPoint(x: x, y: y)
+    }
+
+    /// Expand a thin caret into a full line box so the panel cannot cover half the row.
+    nonisolated static func lineClearingRect(_ rect: NSRect) -> NSRect {
+        guard rect.height < minLineHeight else { return rect }
+        let extra = minLineHeight - rect.height
+        return NSRect(
+            x: rect.origin.x,
+            y: rect.origin.y - extra / 2,
+            width: rect.width,
+            height: minLineHeight
+        )
     }
 
     /// 大输入区域收成靠近鼠标或区域中心的小锚点，避免按整框底边摆面板。
