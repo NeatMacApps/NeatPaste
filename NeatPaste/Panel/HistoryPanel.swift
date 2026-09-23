@@ -126,7 +126,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
                 setFrame(placement.seed, display: true)
             }
             hostingView?.alphaValue = 0
-            alphaValue = PanelMotion.prefersReducedMotion ? 0 : 1
+            alphaValue = 0
         }
 
         orderFrontRegardless()
@@ -154,8 +154,8 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             context.timingFunction = PanelMotion.appearTiming
             context.allowsImplicitAnimation = true
             animator().setFrame(placement.frame, display: true)
+            animator().alphaValue = 1
             hostingView?.animator().alphaValue = 1
-            alphaValue = 1
         } completionHandler: { [weak self] in
             guard let self, generation == self.motionGeneration else { return }
             self.lockSizeAfterMotion(placement.frame)
@@ -220,6 +220,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             context.timingFunction = PanelMotion.dismissTiming
             context.allowsImplicitAnimation = true
             animator().setFrame(seed, display: true)
+            animator().alphaValue = 0
             hostingView?.animator().alphaValue = 0
         } completionHandler: { [weak self] in
             guard let self, generation == self.motionGeneration else { return }
