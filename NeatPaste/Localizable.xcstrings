@@ -882,6 +882,24 @@
           }
         }
       }
+    },
+    "settings.version.label": {
+      "comment": "Settings footer version, filled with the bundle version at runtime",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Version"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "版本"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
