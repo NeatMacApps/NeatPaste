@@ -82,6 +82,35 @@ final class QuickLookPreviewFileTests: XCTestCase {
         let url = try QuickLookPreviewFile.makeURL(for: item)
         XCTAssertNotEqual(url.standardizedFileURL, textFile.standardizedFileURL)
         XCTAssertEqual(try Data(contentsOf: url), png)
+        // 旁路 blob 无扩展名，预览必须落在带图片扩展名的临时文件，否则 Quick Look 会当文本打开。
+        XCTAssertEqual(url.pathExtension, "png")
+        XCTAssertTrue(url.path.contains("NeatPasteQuickLook"))
+    }
+
+    func test_旁路图片预览必须带扩展名() throws {
+        let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")!
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("neatpaste-ql-ext-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let id = UUID()
+        let vault = PayloadVault(rootURL: dir)
+        _ = try vault.spill(itemID: id, payloads: ["public.png": png])
+        let item = HistoryItem(
+            id: id,
+            createdAt: Date(),
+            plainText: "",
+            sourceBundleID: nil,
+            hasImage: true,
+            types: ["public.png"],
+            payloads: [:],
+            externalPayloadTypes: ["public.png"],
+            payloadDirectoryURL: dir
+        )
+        let url = try QuickLookPreviewFile.makeURL(for: item)
+        XCTAssertFalse(url.pathExtension.isEmpty, "扩展名为空会被 Quick Look 当文本")
+        XCTAssertEqual(url.pathExtension, "png")
+        XCTAssertEqual(try Data(contentsOf: url), png)
     }
 
     func test_预览窗默认尺寸保持小窗() {

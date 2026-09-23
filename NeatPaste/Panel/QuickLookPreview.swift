@@ -13,8 +13,20 @@ nonisolated enum QuickLookPreviewFile: Sendable {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         // 与列表缩略图同一优先级：旁路与内联图片优先于 public.file-url，避免 stale 文件地址把预览带成文本。
+        // 旁路 blob 文件名是 sha256、无扩展名，Quick Look 靠扩展名选预览器，直接返回会导致图片被当文本。
+        // 必须拷贝到带图片扩展名的临时文件再返回。
         if let external = item.preferredExternalImageURL() {
-            return external
+            let ext = Self.externalImageExtension(for: item)
+            let dest = directory.appendingPathComponent("\(item.id.uuidString).\(ext)")
+            // 同一 UUID 扩展名可能变化（如类型推断修正），先清掉旧的同名不同扩展名残留再拷贝，保证新鲜。
+            if dest.path != external.path {
+                try? FileManager.default.removeItem(at: dest)
+                if (try? FileManager.default.copyItem(at: external, to: dest)) != nil {
+                    return dest
+                }
+            } else {
+                return external
+            }
         }
 
         if item.hasImage, let image = imagePayload(in: item.payloads) {
@@ -94,9 +106,35 @@ nonisolated enum QuickLookPreviewFile: Sendable {
             }
         }
         for (type, data) in payloads where PasteboardCapture.isImageType(type) && !data.isEmpty {
-            return (data, "png")
+            return (data, fileExtension(forImageType: type))
         }
         return nil
+    }
+
+    /// 旁路图片的类型推断扩展名，与 PayloadVault.preferredImageURL 同一优先级，保证拷贝后的扩展名与实际字节对应。
+    nonisolated static func externalImageExtension(for item: HistoryItem) -> String {
+        for type in HistoryItem.preferredImageTypes {
+            if item.externalPayloadTypes.contains(type) || item.types.contains(type) {
+                return fileExtension(forImageType: type)
+            }
+        }
+        for type in item.externalPayloadTypes where PasteboardCapture.isImageType(type) {
+            return fileExtension(forImageType: type)
+        }
+        for type in item.types where PasteboardCapture.isImageType(type) {
+            return fileExtension(forImageType: type)
+        }
+        return "png"
+    }
+
+    nonisolated static func fileExtension(forImageType type: String) -> String {
+        let lowered = type.lowercased()
+        if lowered.contains("jpeg") || lowered.contains("jpg") { return "jpg" }
+        if lowered.contains("tiff") { return "tiff" }
+        if lowered.contains("heic") || lowered.contains("heif") { return "heic" }
+        if lowered.contains("gif") { return "gif" }
+        if lowered.contains("png") { return "png" }
+        return "png"
     }
 
     private static func writeImage(

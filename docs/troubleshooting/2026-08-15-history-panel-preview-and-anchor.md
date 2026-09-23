@@ -36,6 +36,7 @@
 
 1. 与缩略图同一优先级：旁路图片 → 内联图片 → 仅当 `public.file-url` 指向图片或本条不是图片条目时才用文件地址。
 2. 旁路 manifest 读不到时，再 materialize 外置载荷写临时图片文件，不要直接写 `plainText` 的 `.txt`。
+3. 旁路 blob 文件名是 sha256、无扩展名，**禁止直接把旁路原路径交给 Quick Look**：Quick Look 靠扩展名选预览器，无扩展名的图片会被当文本打开（列表缩略图不受影响，因其走 CGImageSource 内容嗅探）。必须按条目图片类型推断扩展名（png/jpg/tiff/heic/gif），拷贝到 `NeatPasteQuickLook/<id>.<ext>` 再返回。
 
 验收：复制截图 → 列表有缩略图 → 空格预览必须是图片小窗，不是「图片」或文件名的文本页。
 
