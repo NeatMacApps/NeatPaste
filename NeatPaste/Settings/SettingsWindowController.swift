@@ -14,6 +14,8 @@ final class SettingsWindowController: NSObject, NSWindowDelegate {
     func show() {
         if window == nil {
             let hosting = NSHostingController(rootView: SettingsView())
+            // 内容变高后窗口跟着撑开：460x460 的初始框只定起点，不裁内容。
+            hosting.sizingOptions = [.intrinsicContentSize]
             let window = NSWindow(
                 contentRect: NSRect(x: 0, y: 0, width: 460, height: 460),
                 styleMask: [.titled, .closable],
