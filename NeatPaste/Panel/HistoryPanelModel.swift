@@ -110,6 +110,15 @@ final class HistoryPanelModel {
         onHide?()
     }
 
+    /// 行向外拖（访达、备忘录等）。nil 表示该条无可拖内容；拖完面板不关，可连拖多条。
+    func dragProvider(for id: HistoryItem.ID) -> NSItemProvider? {
+        guard let item = visibleItems.first(where: { $0.id == id }) else { return nil }
+        let history = self.history
+        return HistoryDragProvider.provider(for: item) { itemID in
+            await history.materializePayloads(id: itemID)
+        }
+    }
+
     func confirmPaste() async {
         await confirmPaste(fromMouse: false)
     }

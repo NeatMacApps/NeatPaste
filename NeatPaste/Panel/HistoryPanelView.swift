@@ -98,6 +98,9 @@ struct HistoryPanelView: View {
                                 .onTapGesture {
                                     Task { await model.handleItemClick(item.id) }
                                 }
+                                .onDrag {
+                                    model.dragProvider(for: item.id) ?? NSItemProvider()
+                                }
                                 .contextMenu {
                                     Button(role: .destructive) {
                                         Task { await model.deleteItem(item.id) }
