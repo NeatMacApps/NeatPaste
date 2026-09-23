@@ -7,21 +7,19 @@ struct SettingsView: View {
     @Bindable private var preferences = AppPreferences.shared
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            if !preferences.isMenuBarIconVisible {
-                runningStatusCard
-            }
-            shortcutCard
-            launchCard
-            menuBarIconCard
-            ignoredAppsCard
-            // 右键菜单对等入口：藏图标后仍能从设置窗完成这些操作。
-            actionsCard
-            Text(versionFooter)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .monospacedDigit()
-                .frame(maxWidth: .infinity, alignment: .center)
+        TabView {
+            generalTab
+                .tabItem {
+                    Label(String(localized: "settings.tabs.general"), systemImage: "gearshape")
+                }
+            ignoredAppsTab
+                .tabItem {
+                    Label(String(localized: "settings.tabs.ignored"), systemImage: "eye.slash")
+                }
+            moreTab
+                .tabItem {
+                    Label(String(localized: "settings.tabs.more"), systemImage: "ellipsis.circle")
+                }
         }
         .padding(20)
         .frame(width: 460)
@@ -32,6 +30,39 @@ struct SettingsView: View {
         }
         .onDisappear {
             hotkeyManager.stopRecording()
+        }
+    }
+
+    private var generalTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            if !preferences.isMenuBarIconVisible {
+                runningStatusCard
+            }
+            shortcutCard
+            launchCard
+            menuBarIconCard
+        }
+    }
+
+    private var ignoredAppsTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            GroupBox {
+                Text(String(localized: "settings.ignoredApps.empty"))
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private var moreTab: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // 右键菜单对等入口：藏图标后仍能从设置窗完成这些操作。
+            actionsCard
+            Text(versionFooter)
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+                .monospacedDigit()
+                .frame(maxWidth: .infinity, alignment: .center)
         }
     }
 
@@ -134,22 +165,6 @@ struct SettingsView: View {
                 )
             )
             .focusEffectDisabled()
-        }
-    }
-
-    private var ignoredAppsCard: some View {
-        GroupBox(label: Label(String(localized: "settings.ignoredApps.section"), systemImage: "eye.slash")) {
-            VStack(alignment: .leading, spacing: 8) {
-                if AppPreferences.shared.ignoredAppBundleIDs.isEmpty {
-                    Text(String(localized: "settings.ignoredApps.empty"))
-                        .foregroundStyle(.secondary)
-                }
-                Text(String(localized: "settings.ignoredApps.footnote"))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
