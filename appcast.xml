@@ -6,6 +6,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatPaste</title>
         <item>
+            <title>1.0.13</title>
+            <pubDate>Sat, 17 Oct 2026 17:22:23 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatPaste</link>
+            <sparkle:version>14</sparkle:version>
+            <sparkle:shortVersionString>1.0.13</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.13/NeatPaste-1.0.13.zip" length="4574170" type="application/octet-stream" sparkle:edSignature="89iOu33rJPjlV63bJTxB2vSoEP8z88mEKyRvs1IwTdrq8Buaotto1RSynFyuS9puJIpO4KfX8u4y79yIET6wAg=="/>
+        </item>
+        <item>
             <title>1.0.12</title>
             <pubDate>Sat, 17 Oct 2026 17:07:50 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatPaste</link>
@@ -93,18 +102,9 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.1/NeatPaste-1.0.1.zip" length="4433083" type="application/octet-stream" sparkle:edSignature="nvJFN/FhZ85G7+ZCwj6NzzFLRbhTW6wW629z1Iybk/HJe4w8IRXSZWw1J2FISYgQKg11PZcJ34oZdTuV9+wNCg=="/>
         </item>
-        <item>
-            <title>1.0.0</title>
-            <pubDate>Mon, 17 Aug 2026 21:36:26 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatPaste</link>
-            <sparkle:version>1</sparkle:version>
-            <sparkle:shortVersionString>1.0.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.0/NeatPaste-1.0.0.zip" length="3579611" type="application/octet-stream" sparkle:edSignature="eAoXcixVH/dDL90tZMW+4227dvQ1setmCn8m6mUjifEdTYgmLlXsvhZlZuKoCD6zFd737YQT3LTcmuAKtt+dCw=="/>
-        </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: MPmmMU6U7Lm6iscA6cbzAPjyVJVnGZSpcYWPhmNNCyvJJQGAX7J4nmflavYYgjT3rRKZm833UaqZt3aPyexmCw==
-length: 7498
+edSignature: /GTzFN79BaWMl4JWZsTfwj2bUtRFjB4zm5dIn47+5TpotqyU2YOVvkpois2Az4YwKZR75z3sWF6ZudZGhGxeCA==
+length: 7503
 -->
