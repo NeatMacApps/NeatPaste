@@ -11,8 +11,8 @@
 ### 走不通的路
 
 - **先把变化计数往前推，再去读内容。** 读到空就放弃。下次探测和打开面板都认为「已经处理过」，用户复制的那条永远不出现。
-- **只读条目里的字节。** 有的应用只填了整板字符串，条目字节是空的。必须按「条目字节 → 条目字符串 → 整板数据 → 整板字符串」补读。
-- **用系统剪贴板跑单测。** 会污染用户正在用的剪贴板，也会和本机监听抢。必须用独立命名的剪贴板。
+- **Reading item bytes only misses board-level content.** Some apps fill only the whole-board string, leaving item bytes empty. This product's selected fallback order is item bytes → item string → board data → board string (「条目字节 → 条目字符串 → 整板数据 → 整板字符串」, product contract, not a mandatory order for all readers). General representation-selection rules: [Clipboard representations §Reading supported representations](~/.config/agentsync/docs/MACOS_PASTE_INJECT_SUCCESS_GUIDE.md#reading-supported-representations).
+- **Running unit tests against the system pasteboard.** That pollutes the user's live clipboard and races this machine's listener. Unit tests in this product must use an independently named pasteboard; explicitly authorized system-pasteboard acceptance may still use the system board under the backup/restore contract (see [Isolated tests and system-pasteboard acceptance](~/.config/agentsync/docs/MACOS_PASTE_INJECT_SUCCESS_GUIDE.md#isolated-tests-and-system-pasteboard-acceptance)).
 
 ### 正确拦法
 
@@ -25,9 +25,9 @@
 
 验收：复制一条唯一文本，等至少 0.5 秒，用快捷键打开面板必须看到这一条。第一波不允许用假数据冒充这条路径。
 
-## 写回同时带文字和文件时，文字会被冲掉
+## Text plus file write-back drops the text
 
-先写入文字再按文件地址写对象，会整板替换，文字没了。文本、图片和文件地址必须同一批一次写完。
+Observed 2026-08-15: writing text first and then file URLs dropped the text. This product's contract: text, images, and file URLs go out in one batch. General publishing shape: [Publishing multiple items and representations](~/.config/agentsync/docs/MACOS_PASTE_INJECT_SUCCESS_GUIDE.md#publishing-multiple-items-and-representations).
 
 ## 粘贴：写回后合成 ⌘V 的失败与竞态
 

@@ -40,6 +40,8 @@ NeatPaste 是 macOS 26+ 的菜单栏剪贴板历史工具。复制之后可以�
 | 上下键 | 点一下移动一条；**按住不放按系统连发速度连续移动**，预览开着同样如此，不要只动一格 |
 | 快捷键默认值 | ⌘⌥V，可在设置里改 |
 
+During expansion, keep the caret-adjacent edge and content stable without vertical jitter, especially when growing downward from the top edge. Window resizing and content positioning must stay synchronized.
+
 ## 明确不做
 
 第一波和后续默认都不做，除非产品重新拍板：

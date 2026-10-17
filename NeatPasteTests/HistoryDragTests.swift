@@ -20,24 +20,19 @@ final class HistoryDragTests: XCTestCase {
         let provider = try XCTUnwrap(HistoryDragProvider.provider(for: item) { _ in [:] })
 
         let stringExp = expectation(description: "string")
-        var loadedString: String?
         _ = provider.loadObject(ofClass: NSString.self) { value, _ in
-            loadedString = (value as? NSString) as String?
+            XCTAssertEqual((value as? NSString) as String?, "Hello drag")
             stringExp.fulfill()
         }
         wait(for: [stringExp], timeout: 5)
-        XCTAssertEqual(loadedString, "Hello drag")
 
         let fileExp = expectation(description: "txt file")
-        var loadedText: String?
         _ = provider.loadFileRepresentation(forTypeIdentifier: UTType.plainText.identifier) { url, _ in
-            if let url, let text = try? String(contentsOf: url, encoding: .utf8) {
-                loadedText = text
-            }
+            let text = url.flatMap { try? String(contentsOf: $0, encoding: .utf8) }
+            XCTAssertEqual(text, "Hello drag")
             fileExp.fulfill()
         }
         wait(for: [fileExp], timeout: 5)
-        XCTAssertEqual(loadedText, "Hello drag")
         XCTAssertEqual(provider.suggestedName, "Hello drag.txt")
     }
 
@@ -55,25 +50,19 @@ final class HistoryDragTests: XCTestCase {
         let provider = try XCTUnwrap(HistoryDragProvider.provider(for: item) { _ in [:] })
 
         let dataExp = expectation(description: "png data")
-        var loadedData: Data?
         _ = provider.loadDataRepresentation(forTypeIdentifier: UTType.png.identifier) { data, _ in
-            loadedData = data
+            XCTAssertEqual(data, png)
             dataExp.fulfill()
         }
         wait(for: [dataExp], timeout: 5)
-        XCTAssertEqual(loadedData, png)
 
         let fileExp = expectation(description: "png file")
-        var fileURL: URL?
-        var fileData: Data?
         _ = provider.loadFileRepresentation(forTypeIdentifier: UTType.png.identifier) { url, _ in
-            fileURL = url
-            if let url { fileData = try? Data(contentsOf: url) }
+            XCTAssertEqual(url?.pathExtension, "png")
+            XCTAssertEqual(url.flatMap { try? Data(contentsOf: $0) }, png)
             fileExp.fulfill()
         }
         wait(for: [fileExp], timeout: 5)
-        XCTAssertEqual(fileURL?.pathExtension, "png")
-        XCTAssertEqual(fileData, png)
     }
 
     func test_外置图片经旁路拖出且不受stale文件地址影响() throws {
@@ -109,16 +98,12 @@ final class HistoryDragTests: XCTestCase {
         let provider = try XCTUnwrap(HistoryDragProvider.provider(for: item, materialize: materialize))
 
         let fileExp = expectation(description: "external png file")
-        var fileData: Data?
-        var fileExtension: String?
         _ = provider.loadFileRepresentation(forTypeIdentifier: UTType.png.identifier) { url, _ in
-            fileExtension = url?.pathExtension
-            if let url { fileData = try? Data(contentsOf: url) }
+            XCTAssertEqual(url?.pathExtension, "png")
+            XCTAssertEqual(url.flatMap { try? Data(contentsOf: $0) }, png)
             fileExp.fulfill()
         }
         wait(for: [fileExp], timeout: 5)
-        XCTAssertEqual(fileExtension, "png")
-        XCTAssertEqual(fileData, png)
     }
 
     func test_文件条直接拖出原文件() throws {

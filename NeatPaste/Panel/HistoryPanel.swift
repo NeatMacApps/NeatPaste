@@ -143,8 +143,10 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
                 animator().alphaValue = 1
                 hostingView?.animator().alphaValue = 1
             } completionHandler: { [weak self] in
-                guard let self, generation == self.motionGeneration else { return }
-                self.lockSizeAfterMotion(placement.frame)
+                self?.performOnMain {
+                    guard let self, generation == self.motionGeneration else { return }
+                    self.lockSizeAfterMotion(placement.frame)
+                }
             }
             return
         }
@@ -152,13 +154,14 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         NSAnimationContext.runAnimationGroup { context in
             context.duration = PanelMotion.appearDuration
             context.timingFunction = PanelMotion.appearTiming
-            context.allowsImplicitAnimation = true
             animator().setFrame(placement.frame, display: true)
             animator().alphaValue = 1
             hostingView?.animator().alphaValue = 1
         } completionHandler: { [weak self] in
-            guard let self, generation == self.motionGeneration else { return }
-            self.lockSizeAfterMotion(placement.frame)
+            self?.performOnMain {
+                guard let self, generation == self.motionGeneration else { return }
+                self.lockSizeAfterMotion(placement.frame)
+            }
         }
     }
 
@@ -209,8 +212,10 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
                 context.timingFunction = CAMediaTimingFunction(name: .easeIn)
                 animator().alphaValue = 0
             } completionHandler: { [weak self] in
-                guard let self, generation == self.motionGeneration else { return }
-                self.finishHide()
+                self?.performOnMain {
+                    guard let self, generation == self.motionGeneration else { return }
+                    self.finishHide()
+                }
             }
             return
         }
@@ -218,13 +223,14 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         NSAnimationContext.runAnimationGroup { context in
             context.duration = PanelMotion.dismissDuration
             context.timingFunction = PanelMotion.dismissTiming
-            context.allowsImplicitAnimation = true
             animator().setFrame(seed, display: true)
             animator().alphaValue = 0
             hostingView?.animator().alphaValue = 0
         } completionHandler: { [weak self] in
-            guard let self, generation == self.motionGeneration else { return }
-            self.finishHide()
+            self?.performOnMain {
+                guard let self, generation == self.motionGeneration else { return }
+                self.finishHide()
+            }
         }
     }
 
@@ -615,9 +621,9 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
 }
 
 /// Keeps list content at its real size while the glass window grows from a droplet.
-private final class PinnedContentHost: NSView {
+final class PinnedContentHost: NSView {
     var pinsToTop = true {
-        didSet { needsLayout = true }
+        didSet { positionContent() }
     }
 
     private let fullSize: NSSize
@@ -635,8 +641,21 @@ private final class PinnedContentHost: NSView {
         fatalError("PinnedContentHost is not archived")
     }
 
+    override func resizeSubviews(withOldSize oldSize: NSSize) {
+        // The window animator resizes us before the next deferred layout pass.
+        // Move the full-size content in the same frame so its screen anchor stays fixed.
+        positionContent()
+    }
+
     override func layout() {
         super.layout()
+        positionContent()
+    }
+
+    private func positionContent() {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        defer { CATransaction.commit() }
         if pinsToTop {
             hosted.frame = NSRect(
                 x: 0,

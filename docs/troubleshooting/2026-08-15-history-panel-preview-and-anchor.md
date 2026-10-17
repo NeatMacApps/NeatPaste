@@ -64,6 +64,46 @@
 4. 点菜单栏图标时，系统往往已经丢掉光标，退到鼠标附近是预期；**快捷键唤出**才是贴着输入位置的路径。
 5. 算出锚点后：左边界对齐光标；面板整体放在这一行下面（或上面），不要挡住这一行。
 
+## Vertical jitter during downward expansion
+
+The reported symptom is primarily downward expansion with content pinned to the top.
+`PinnedContentHost.layout()` alone left the full-size hosting view at its previous
+position immediately after a resize; an isolated native resize probe and the regression
+test reproduced the stale content edge. Upward expansion pins content at y = 0 and
+requires no corresponding per-frame translation, explaining the directional difference.
+
+Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
+`NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable
+Core Animation actions for this corrective translation; keep the window's explicit frame
+animation and content fade. Do not replace real window resizing with scaling or lengthen
+the animation to hide the defect. Shared API details:
+[AppKit resizing and pinned content](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#pinned-content-during-window-resize).
+
+Regression coverage includes immediate resize without a deferred layout pass, both
+anchor directions, and sampling the actual `HistoryPanel.showPanel(placement:)` animation.
+Review live motion separately from geometry assertions; static screenshots cannot prove
+absence of compositor jitter.
+
+### Validation diagnostics
+
+- Animation completion callbacks now enter the existing main-actor bridge before checking
+  the generation and changing panel state; no cross-actor warning is retained.
+- Drag tests assert loaded values inside the provider callbacks before fulfilling their
+  expectations, removing mutable captures shared with an internal provider queue.
+- Xcode 27.2 emits `Metadata extraction skipped, no AppIntents.framework dependency found`
+  for the application/test targets. Neither target declares App Intents or shortcuts;
+  metadata extraction has no inputs and the product does not depend on its output.
+  Retain this tool-generated warning rather than add an unused dependency or suppress
+  diagnostics. Reassess if an App Intents feature is introduced.
+
+### Release workflow
+
+The publisher now uses Developer ID archive/export, reusing NeatWebApp's release workflow
+and [Sparkle's supported distribution route](https://sparkle-project.org/documentation/).
+The exported app is installed after the source commit, before the external notarization
+wait. Publication still requires stapled app/DMG tickets, signed update feed and verified
+remote assets. Build logs remain local and are excluded from source staging.
+
 ## 相同内容只留一条
 
 再复制一次已有内容：删掉旧的，新的顶到最上，并留下这一次的完整格式。不要并排堆重复。

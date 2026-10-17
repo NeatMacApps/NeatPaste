@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # NeatPaste macOS 一条命令发版：
-#   Release 构建 -> 重签 Sparkle 内嵌件 -> Developer ID 签名自检 -> 苹果公证 -> 装订票据
+#   Release 归档 -> Developer ID 导出 -> 签名自检 -> 苹果公证 -> 装订票据
 #   -> 生成 Sparkle 签名更新包与 appcast -> 打 dmg -> 公证 dmg -> 装订
 #   -> 提交 / 打 tag / 推送 -> GitHub Release（先建空再传 dmg/zip）-> appcast 入库
 #   -> Homebrew cask -> 匿名终检
@@ -38,7 +38,9 @@ readonly NOTARY_ISSUER="${NOTARY_ISSUER:?缺少公证 Issuer ID（NOTARY_ISSUER)
 readonly SPARKLE_ACCOUNT="${SPARKLE_ACCOUNT:?缺少 Sparkle 签名账号（SPARKLE_ACCOUNT）}"
 readonly SIGN_IDENTITY="Developer ID Application"
 readonly BUILD_DIR="${ROOT_DIR}/build"
-readonly APP_PATH="${BUILD_DIR}/DerivedData/Build/Products/Release/${APP_NAME}.app"
+readonly ARCHIVE_PATH="${BUILD_DIR}/${APP_NAME}.xcarchive"
+readonly EXPORT_DIR="${BUILD_DIR}/export"
+readonly APP_PATH="${EXPORT_DIR}/${APP_NAME}.app"
 readonly NOTARY_POLL_INTERVAL=30
 readonly NOTARY_TIMEOUT=3600
 
@@ -157,42 +159,39 @@ if [[ "${local_only}" == false ]] \
 fi
 log_step "本次发布版本：${tag}（内部构建号 ${build_number}）"
 
-# ---------- 1. 构建 ----------
-log_step "生成 Xcode 工程并做 Release 构建"
-xcodegen generate >/dev/null
+# ---------- 1. Archive and export distribution signatures ----------
+# Reuse the Developer ID export workflow from NeatWebApp; Xcode signs Sparkle's
+# nested helpers with their own entitlements instead of manual bundle re-signing.
+log_step "生成 Xcode 工程并做 Release 归档"
+xcodegen generate
+git add -A -- . ':!logs/**' ':!.build-menubar-fix/**'
+if ! git diff --cached --quiet; then
+  git commit -m "fix: stabilize downward panel expansion (${tag})"
+fi
 xcodebuild -project ${APP_NAME}.xcodeproj -scheme ${APP_NAME} -configuration Release \
-  -destination 'platform=macOS' -derivedDataPath build/DerivedData \
-  -allowProvisioningUpdates build \
-  || die "Release 构建失败"
-[[ -d "${APP_PATH}" ]] || die "构建产物不存在：${APP_PATH}"
+  -destination 'generic/platform=macOS' -derivedDataPath build/DerivedData \
+  -archivePath "${ARCHIVE_PATH}" -allowProvisioningUpdates archive \
+  || die "Release 归档失败"
+
+export_options="${work_dir}/ExportOptions.plist"
+cat > "${export_options}" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>method</key><string>developer-id</string>
+<key>teamID</key><string>SHZQ3MWP3B</string>
+<key>signingStyle</key><string>manual</string>
+<key>signingCertificate</key><string>Developer ID Application</string>
+<key>destination</key><string>export</string>
+</dict></plist>
+EOF
+xcodebuild -exportArchive -archivePath "${ARCHIVE_PATH}" \
+  -exportOptionsPlist "${export_options}" -exportPath "${EXPORT_DIR}" \
+  -allowProvisioningUpdates || die "Developer ID 导出失败"
+[[ -d "${APP_PATH}" ]] || die "导出产物不存在：${APP_PATH}"
 [[ -x "${sparkle_bin_dir}/generate_appcast" ]] || die "找不到 Sparkle 的 generate_appcast 工具"
 [[ -x "${sparkle_bin_dir}/sign_update" ]] || die "找不到 Sparkle 的 sign_update 工具"
-
-# ---------- 1.5 重签 Sparkle 内嵌可执行文件 ----------
-# xcodebuild 只重签 Sparkle.framework 本体，framework 内部的 Updater.app / Autoupdate /
-# 两个 XPC 服务仍保留 SPM 包自带的 ad-hoc 签名，苹果公证会逐个检查并打回。
-# 必须按「最内层先签」的顺序用 Developer ID 重签，最后重签外层 App。
-log_step "重签 Sparkle 内嵌可执行文件（Updater / Autoupdate / XPC 服务）"
 sparkle_fw_dir="${APP_PATH}/Contents/Frameworks/Sparkle.framework/Versions/B"
-codesign --force --options runtime --timestamp \
-  --entitlements "${BUILD_DIR}/DerivedData/SourcePackages/checkouts/Sparkle/Downloader/Downloader.entitlements" \
-  --sign "${SIGN_IDENTITY}" "${sparkle_fw_dir}/XPCServices/Downloader.xpc" \
-  || die "重签 Sparkle Downloader.xpc 失败"
-codesign --force --options runtime --timestamp \
-  --sign "${SIGN_IDENTITY}" "${sparkle_fw_dir}/XPCServices/Installer.xpc" \
-  || die "重签 Sparkle Installer.xpc 失败"
-codesign --force --options runtime --timestamp \
-  --sign "${SIGN_IDENTITY}" "${sparkle_fw_dir}/Updater.app" \
-  || die "重签 Sparkle Updater.app 失败"
-codesign --force --options runtime --timestamp \
-  --sign "${SIGN_IDENTITY}" "${sparkle_fw_dir}/Autoupdate" \
-  || die "重签 Sparkle Autoupdate 失败"
-codesign --force --options runtime --timestamp \
-  --sign "${SIGN_IDENTITY}" "${APP_PATH}/Contents/Frameworks/Sparkle.framework" \
-  || die "重签 Sparkle.framework 失败"
-codesign --force --options runtime --timestamp \
-  --sign "${SIGN_IDENTITY}" "${APP_PATH}" \
-  || die "重签 ${APP_NAME}.app 失败"
 sparkle_public_key="$(/usr/libexec/PlistBuddy -c 'Print :SUPublicEDKey' NeatPaste/Info.plist 2>/dev/null || true)"
 [[ -n "${sparkle_public_key}" ]] || die "Info.plist 缺少 Sparkle 更新公钥"
 [[ "$("${sparkle_bin_dir}/generate_keys" --account "${SPARKLE_ACCOUNT}" -p 2>/dev/null)" == "${sparkle_public_key}" ]] \
@@ -221,6 +220,16 @@ for nested in "${sparkle_fw_dir}/XPCServices/Downloader.xpc" \
     || die "嵌套组件缺安全时间戳：${nested}"
 done
 
+codesign --verify --deep --strict --verbose=2 "${APP_PATH}" || die "应用签名结构无效"
+
+# Install a committed, exported artifact before the external notarization wait.
+log_step "覆盖安装本机应用"
+pkill -x "${APP_NAME}" || true
+rm -rf "/Applications/${APP_NAME}.app"
+ditto "${APP_PATH}" "/Applications/${APP_NAME}.app"
+codesign --verify --deep --strict --verbose=2 "/Applications/${APP_NAME}.app"
+open "/Applications/${APP_NAME}.app"
+
 # ---------- 3. 公证应用本体 ----------
 log_step "提交苹果公证（应用本体），通常 1-5 分钟"
 rm -f "${BUILD_DIR}/${APP_NAME}-notarize.zip"
@@ -229,6 +238,7 @@ notarize_and_wait "${BUILD_DIR}/${APP_NAME}-notarize.zip"
 
 log_step "把公证票据装订进应用"
 xcrun stapler staple "${APP_PATH}" || die "装订票据失败"
+xcrun stapler staple "/Applications/${APP_NAME}.app" || die "本机应用装订失败"
 
 # ---------- 4. 生成 Sparkle 更新包与清单 ----------
 log_step "生成 Sparkle 签名更新包与 appcast"
@@ -236,9 +246,13 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- History panel left-aligns with the caret and stays off the line you are typing
-- Opening and closing the panel expands from the caret as fast liquid glass
-- One settings window; hiding the menu bar icon no longer uses a separate recovery window
+- Fix vertical jitter while the history panel expands by keeping its content aligned with every window resize.
+- Preserve the fast glass expansion from the caret and the shorter closing animation.
+
+简体中文
+
+- 修复历史面板展开时的上下抖动，使内容定位与窗口缩放同步。
+- 保留从光标撑开的快速玻璃动效，以及更快的收起动画。
 EOF
 
 appcast_dir="${work_dir}/appcast"
@@ -300,9 +314,9 @@ fi
 
 # ---------- 6. 提交与打 tag ----------
 log_step "提交改动并打 tag"
-git add -A
+git add -A -- . ':!logs/**' ':!.build-menubar-fix/**'
 if ! git diff --cached --quiet; then
-  git -c core.hooksPath=/dev/null commit -m "chore: 发布 ${tag}" >/dev/null
+  git commit -m "chore: 发布 ${tag}" >/dev/null
 else
   echo "工作区无改动，跳过提交"
 fi
@@ -346,7 +360,7 @@ log_step "更新公开 appcast（随源码仓发布）"
 ditto "${appcast_dir}/appcast.xml" appcast.xml
 git add appcast.xml
 if ! git diff --cached --quiet; then
-  git -c core.hooksPath=/dev/null commit -m "chore: 发布 ${tag} 更新清单" >/dev/null
+  git commit -m "chore: 发布 ${tag} 更新清单" >/dev/null
   git push origin main
 fi
 
@@ -398,7 +412,7 @@ git -C "${tap_dir}" add "Casks/${CASK_NAME}.rb"
 if git -C "${tap_dir}" diff --cached --quiet; then
   echo "Homebrew 配方已是 ${version}，无需更新"
 else
-  git -C "${tap_dir}" -c core.hooksPath=/dev/null commit -m "${CASK_NAME} ${version}"
+  git -C "${tap_dir}" commit -m "${CASK_NAME} ${version}"
   git -C "${tap_dir}" push origin HEAD
 fi
 
