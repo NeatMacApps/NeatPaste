@@ -89,23 +89,31 @@ Fix: drive show/hide frames with a manual anchored stepper (same durations and
 cubic-bezier control points as `PanelMotion`, now shared from one source). Each tick
 interpolates width/height plus the fixed edges with a single eased progress, derives
 the origin from the fixed edges (shared edges stay exactly constant), snaps to backing
-pixels, and sets the frame synchronously with all implicit actions disabled. Alpha
-follows the same eased progress. Ticks are paced by the display vsync
-(`NSWindow.displayLink`, common modes); a Task fallback only steps while the link is
-stalled, so a runloop timer never beats against the refresh and reads as judder.
-Reduced-motion paths keep their fade-only behavior
-with `allowsImplicitAnimation = false` set explicitly. Real window resize is preserved
-(no scaling, no bounce, same 0.18/0.12 s pacing).
+pixels, and sets the frame synchronously with all implicit actions disabled. Ticks are
+paced by the display vsync (`NSWindow.displayLink`, common modes); a Task fallback
+only steps while the link is stalled, so a runloop timer never beats against the
+refresh and reads as judder. Rendered progress advances toward the wall-clock target
+by at most 10% per tick: a hitch stretches the motion instead of teleporting the
+window (measured before the cap: 77%+ of growth in a single first frame). The appear
+curve is a standard ease-out cubic, deliberately not front-loaded. Reduced-motion
+paths keep their fade-only behavior with `allowsImplicitAnimation = false` set
+explicitly. Real window resize is preserved (no scaling, no bounce, same 0.18/0.12 s
+pacing).
 
-The list also suppresses `ScrollViewReader.scrollTo` while
+Content never participates in growth: on fresh appear the glass grows with content
+held at alpha 0 and settled content fades in over the last stretch; on dismiss
+content drops first and the glass recedes after (smoothstep staging in
+`HistoryPanel.stagedContentAlpha`, unit-pinned). Re-anchor while visible keeps
+content up throughout. The list also suppresses `ScrollViewReader.scrollTo` while
 `HistoryPanelModel.isMotionActive` is set (instant non-animated scroll otherwise) and
-snaps once when motion ends, so row offsets never swim inside the growing glass.
-Reload churn is landed while still ordered out: `HistoryPanel.prepareForShow`
-pre-lays out rows (thumbnail decode included) and `AppDelegate.showPanel` yields two
-runloop turns to flush render plus the scroll reset before the first visible frame,
-which matters most for the copy-then-invoke flow where a new row prepends and the
-selection resets on every show. Anomaly-only telemetry logs slow motions and dropped
-vsync ticks; healthy motions stay silent.
+snaps once when motion ends. Reload churn is still landed while ordered out:
+`HistoryPanel.prepareForShow` pre-lays out rows (thumbnail decode included) and
+`AppDelegate.showPanel` yields two runloop turns to flush render plus the scroll
+reset before the first visible frame, so content is fully realized before its
+late fade-in begins. This matters most for the copy-then-invoke flow where a new
+row prepends and the selection resets on every show. Anomaly-only telemetry logs
+slow motions, dropped vsync ticks, and absorbed hitches; healthy motions stay
+silent.
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable

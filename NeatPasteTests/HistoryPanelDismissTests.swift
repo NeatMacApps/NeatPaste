@@ -106,3 +106,37 @@ final class HistoryPanelMotionTests: XCTestCase {
         XCTAssertEqual(hosted.frame.maxY, 36)
     }
 }
+
+final class HistoryPanelMotionCurveTests: XCTestCase {
+    @MainActor
+    func testAppearCurveNeverFrontLoadsIntoTeleport() {
+        let c = PanelMotion.appearControlPoints
+        // At 10% wall time the eased progress must stay well below half:
+        // the old (0.2, 0.9, 0.22, 1.0) curve mapped an early first-tick delay
+        // into a whole-panel single-frame jump (measured 77%+ of growth in one
+        // frame). This pins the replacement curve against re-front-loading.
+        let early = HistoryPanel.easedProgress(0.1, c1x: c.x1, c1y: c.y1, c2x: c.x2, c2y: c.y2)
+        XCTAssertLessThan(early, 0.45)
+        XCTAssertGreaterThanOrEqual(early, 0)
+        XCTAssertEqual(
+            HistoryPanel.easedProgress(0, c1x: c.x1, c1y: c.y1, c2x: c.x2, c2y: c.y2),
+            0, accuracy: 1e-9)
+        XCTAssertEqual(
+            HistoryPanel.easedProgress(1, c1x: c.x1, c1y: c.y1, c2x: c.x2, c2y: c.y2),
+            1, accuracy: 1e-6)
+    }
+
+    @MainActor
+    func testContentStagingKeepsContentHiddenDuringGrowth() {
+        // Appear: settled content only fades in over the last stretch.
+        XCTAssertEqual(HistoryPanel.stagedContentAlpha(progress: 0, isAppearing: true), 0)
+        XCTAssertEqual(HistoryPanel.stagedContentAlpha(progress: 0.69, isAppearing: true), 0)
+        XCTAssertGreaterThan(HistoryPanel.stagedContentAlpha(progress: 0.85, isAppearing: true), 0)
+        XCTAssertEqual(
+            HistoryPanel.stagedContentAlpha(progress: 1, isAppearing: true), 1, accuracy: 1e-9)
+        // Dismiss: content drops first, glass recedes after.
+        XCTAssertEqual(HistoryPanel.stagedContentAlpha(progress: 0, isAppearing: false), 1)
+        XCTAssertEqual(
+            HistoryPanel.stagedContentAlpha(progress: 1, isAppearing: false), 0, accuracy: 1e-9)
+    }
+}

@@ -15,7 +15,11 @@ enum PanelMotion: Sendable {
     /// Cubic-bezier control points shared by the animator timing functions
     /// and the manual anchored stepper (which must use the same easing so
     /// alpha and size stay together without an animator proxy).
-    nonisolated static let appearControlPoints = (x1: 0.2, y1: 0.9, x2: 0.22, y2: 1.0)
+    /// Appear uses a standard ease-out cubic: brisk but visibly progressive.
+    /// A more front-loaded curve turns any first-tick delay into a whole-panel
+    /// teleport (measured: 77%+ of growth in one frame), so keep early velocity
+    /// bounded.
+    nonisolated static let appearControlPoints = (x1: 0.215, y1: 0.61, x2: 0.355, y2: 1.0)
     nonisolated static let dismissControlPoints = (x1: 0.4, y1: 0.0, x2: 1.0, y2: 1.0)
 
     static var appearTiming: CAMediaTimingFunction {
