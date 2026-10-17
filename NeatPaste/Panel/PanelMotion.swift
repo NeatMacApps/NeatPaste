@@ -12,12 +12,20 @@ enum PanelMotion: Sendable {
     nonisolated static let dismissDuration: TimeInterval = 0.12
     nonisolated static let reducedDuration: TimeInterval = 0.08
 
+    /// Cubic-bezier control points shared by the animator timing functions
+    /// and the manual anchored stepper (which must use the same easing so
+    /// alpha and size stay together without an animator proxy).
+    nonisolated static let appearControlPoints = (x1: 0.2, y1: 0.9, x2: 0.22, y2: 1.0)
+    nonisolated static let dismissControlPoints = (x1: 0.4, y1: 0.0, x2: 1.0, y2: 1.0)
+
     static var appearTiming: CAMediaTimingFunction {
-        CAMediaTimingFunction(controlPoints: 0.2, 0.9, 0.22, 1)
+        let c = appearControlPoints
+        return CAMediaTimingFunction(controlPoints: Float(c.x1), Float(c.y1), Float(c.x2), Float(c.y2))
     }
 
     static var dismissTiming: CAMediaTimingFunction {
-        CAMediaTimingFunction(controlPoints: 0.4, 0, 1, 1)
+        let c = dismissControlPoints
+        return CAMediaTimingFunction(controlPoints: Float(c.x1), Float(c.y1), Float(c.x2), Float(c.y2))
     }
 
     static var prefersReducedMotion: Bool {

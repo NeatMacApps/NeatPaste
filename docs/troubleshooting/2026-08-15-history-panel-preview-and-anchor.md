@@ -66,11 +66,33 @@
 
 ## Vertical jitter during downward expansion
 
-The reported symptom is primarily downward expansion with content pinned to the top.
+The reported symptom is primarily downward expansion with content pinned to the top,
+plus occasional horizontal shimmer.
 `PinnedContentHost.layout()` alone left the full-size hosting view at its previous
 position immediately after a resize; an isolated native resize probe and the regression
 test reproduced the stale content edge. Upward expansion pins content at y = 0 and
 requires no corresponding per-frame translation, explaining the directional difference.
+
+1.0.12 added the synchronous `resizeSubviews(withOldSize:)` correction with disabled
+Core Animation actions. Installed 1.0.12 still showed vertical jitter on downward
+expansion and occasional horizontal jitter, so that correction alone was insufficient.
+
+Root cause (1.0.13): `animator().setFrame` animates a window's origin and size as
+separate Core Animation properties. Even when seed and target share the caret-adjacent
+edges, the two tweens interpolate independently with per-frame display rounding, so
+`origin + size` wobbles by fractions of a point. The animator group also enables
+implicit animations for descendant layers even without an explicit
+`allowsImplicitAnimation = true`, so SwiftUI/glass layers lag one frame behind.
+The motion test only asserted the vertical edge, so the horizontal drift was uncovered.
+
+Fix: drive show/hide frames with a manual anchored stepper (same durations and
+cubic-bezier control points as `PanelMotion`, now shared from one source). Each tick
+interpolates width/height plus the fixed edges with a single eased progress, derives
+the origin from the fixed edges (shared edges stay exactly constant), snaps to backing
+pixels, and sets the frame synchronously with all implicit actions disabled. Alpha
+follows the same eased progress. Reduced-motion paths keep their fade-only behavior
+with `allowsImplicitAnimation = false` set explicitly. Real window resize is preserved
+(no scaling, no bounce, same 0.18/0.12 s pacing).
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable
@@ -80,9 +102,10 @@ the animation to hide the defect. Shared API details:
 [AppKit resizing and pinned content](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#pinned-content-during-window-resize).
 
 Regression coverage includes immediate resize without a deferred layout pass, both
-anchor directions, and sampling the actual `HistoryPanel.showPanel(placement:)` animation.
-Review live motion separately from geometry assertions; static screenshots cannot prove
-absence of compositor jitter.
+anchor directions, sampling the actual `HistoryPanel.showPanel(placement:)` animation,
+and horizontal edge stability (window + content `minX`) alongside the vertical
+caret-adjacent edge. Review live motion separately from geometry assertions; static
+screenshots cannot prove absence of compositor jitter.
 
 ### Validation diagnostics
 

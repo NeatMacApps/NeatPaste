@@ -54,6 +54,10 @@ final class HistoryPanelMotionTests: XCTestCase {
                 let edge = top ? frame.maxY : frame.minY
                 XCTAssertEqual(top ? panel.frame.maxY : panel.frame.minY, edge, accuracy: 0.5)
                 XCTAssertEqual(top ? content.maxY : content.minY, edge, accuracy: 0.5)
+                // Horizontal edge must stay pinned too: the window grows rightward
+                // from the caret, so minX (window + content) never moves.
+                XCTAssertEqual(panel.frame.minX, frame.minX, accuracy: 0.5)
+                XCTAssertEqual(content.minX, frame.minX, accuracy: 0.5)
                 XCTAssertEqual(hosted.frame.size, AppPreferences.panelSize)
                 let keys = hosted.layer?.animationKeys() ?? []
                 XCTAssertFalse(keys.contains { $0.contains("position") || $0.contains("bounds") || $0.contains("frame") })

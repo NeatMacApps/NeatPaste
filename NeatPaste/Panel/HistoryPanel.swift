@@ -23,6 +23,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private var currentPlacement: PanelAnchor.Placement?
     private var motionGeneration = 0
     private var isDismissing = false
+    private var motionTask: Task<Void, Never>?
 
     /// Visible and not in the middle of shrinking away. Hotkey toggle uses this.
     var isPresented: Bool { isVisible && !isDismissing }
@@ -112,21 +113,38 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         clickThroughEater = nil
         isDismissing = false
         ignoresMouseEvents = false
+        cancelMotionTask()
         motionGeneration += 1
         let generation = motionGeneration
-        currentPlacement = placement
-        contentPin?.pinsToTop = placement.pinsContentToTop
+        let scale = motionPixelScale()
+        let targetFrame = snappedRect(placement.frame, scale: scale)
+        // Derive the droplet from the snapped target so the shared edges
+        // (left + caret-adjacent) are exactly equal, not just close.
+        let seedLength = min(PanelAnchor.seedLength, targetFrame.width, targetFrame.height)
+        let targetSeed = NSRect(
+            x: targetFrame.minX,
+            y: placement.pinsContentToTop ? targetFrame.maxY - seedLength : targetFrame.minY,
+            width: seedLength,
+            height: seedLength)
+        let snappedPlacement = PanelAnchor.Placement(
+            frame: targetFrame, seed: targetSeed, pinsContentToTop: placement.pinsContentToTop)
+        currentPlacement = snappedPlacement
+        contentPin?.pinsToTop = snappedPlacement.pinsContentToTop
         unlockSizeForMotion()
 
         let resumeFromCurrent = isVisible
+        let startFrame: NSRect
         if !resumeFromCurrent {
+            startFrame = targetSeed
             if PanelMotion.prefersReducedMotion {
-                setFrame(placement.frame, display: true)
+                applyMotionFrame(targetFrame, alpha: 1)
             } else {
-                setFrame(placement.seed, display: true)
+                applyMotionFrame(startFrame, alpha: 0)
             }
             hostingView?.alphaValue = 0
             alphaValue = 0
+        } else {
+            startFrame = frame
         }
 
         orderFrontRegardless()
@@ -140,29 +158,46 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = PanelMotion.reducedDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                context.allowsImplicitAnimation = false
                 animator().alphaValue = 1
                 hostingView?.animator().alphaValue = 1
             } completionHandler: { [weak self] in
                 self?.performOnMain {
                     guard let self, generation == self.motionGeneration else { return }
-                    self.lockSizeAfterMotion(placement.frame)
+                    self.lockSizeAfterMotion(targetFrame)
                 }
             }
             return
         }
 
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = PanelMotion.appearDuration
-            context.timingFunction = PanelMotion.appearTiming
-            animator().setFrame(placement.frame, display: true)
-            animator().alphaValue = 1
-            hostingView?.animator().alphaValue = 1
-        } completionHandler: { [weak self] in
-            self?.performOnMain {
-                guard let self, generation == self.motionGeneration else { return }
-                self.lockSizeAfterMotion(placement.frame)
-            }
+        if resumeFromCurrent {
+            // Already visible (e.g. re-anchor while open): still drive through
+            // the anchored stepper so a shared edge never lerps independently.
+            startManualMotion(
+                from: startFrame, to: targetFrame,
+                pinsToTop: snappedPlacement.pinsContentToTop,
+                duration: PanelMotion.appearDuration, isAppearing: true,
+                controlPoints: PanelMotion.appearControlPoints,
+                generation: generation) { [weak self] in
+                    self?.performOnMain {
+                        guard let self, generation == self.motionGeneration else { return }
+                        self.lockSizeAfterMotion(targetFrame)
+                    }
+                }
+            return
         }
+
+        startManualMotion(
+            from: startFrame, to: targetFrame,
+            pinsToTop: snappedPlacement.pinsContentToTop,
+            duration: PanelMotion.appearDuration, isAppearing: true,
+            controlPoints: PanelMotion.appearControlPoints,
+            generation: generation) { [weak self] in
+                self?.performOnMain {
+                    guard let self, generation == self.motionGeneration else { return }
+                    self.lockSizeAfterMotion(targetFrame)
+                }
+            }
     }
 
     /// 鼠标粘贴后挡住双击收尾那一下，避免点穿到正在输入的窗口。
@@ -180,6 +215,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         removeOutsideClickMonitor()
 
         guard isVisible else {
+            cancelMotionTask()
             finishHide()
             return
         }
@@ -189,6 +225,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
 
         isDismissing = true
         ignoresMouseEvents = true
+        cancelMotionTask()
         motionGeneration += 1
         let generation = motionGeneration
         unlockSizeForMotion()
@@ -199,17 +236,24 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             resignKey()
         }
 
-        let seed = currentPlacement?.seed ?? NSRect(
-            x: frame.midX - PanelAnchor.seedLength / 2,
-            y: frame.midY - PanelAnchor.seedLength / 2,
-            width: PanelAnchor.seedLength,
-            height: PanelAnchor.seedLength
+        let pinsToTop = currentPlacement?.pinsContentToTop ?? true
+        let scale = motionPixelScale()
+        let fromFrame = snappedRect(frame, scale: scale)
+        let seedLength = min(PanelAnchor.seedLength, fromFrame.width, fromFrame.height)
+        // Shrink back into the same caret-adjacent corner we grew from,
+        // derived from the current frame so the shared edges stay exact.
+        let seed = NSRect(
+            x: fromFrame.minX,
+            y: pinsToTop ? fromFrame.maxY - seedLength : fromFrame.minY,
+            width: seedLength,
+            height: seedLength
         )
 
         if PanelMotion.prefersReducedMotion {
             NSAnimationContext.runAnimationGroup { context in
                 context.duration = PanelMotion.reducedDuration
                 context.timingFunction = CAMediaTimingFunction(name: .easeIn)
+                context.allowsImplicitAnimation = false
                 animator().alphaValue = 0
             } completionHandler: { [weak self] in
                 self?.performOnMain {
@@ -220,18 +264,17 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             return
         }
 
-        NSAnimationContext.runAnimationGroup { context in
-            context.duration = PanelMotion.dismissDuration
-            context.timingFunction = PanelMotion.dismissTiming
-            animator().setFrame(seed, display: true)
-            animator().alphaValue = 0
-            hostingView?.animator().alphaValue = 0
-        } completionHandler: { [weak self] in
-            self?.performOnMain {
-                guard let self, generation == self.motionGeneration else { return }
-                self.finishHide()
+        startManualMotion(
+            from: fromFrame, to: seed,
+            pinsToTop: pinsToTop,
+            duration: PanelMotion.dismissDuration, isAppearing: false,
+            controlPoints: PanelMotion.dismissControlPoints,
+            generation: generation) { [weak self] in
+                self?.performOnMain {
+                    guard let self, generation == self.motionGeneration else { return }
+                    self.finishHide()
+                }
             }
-        }
     }
 
     override func resignKey() {
@@ -247,7 +290,8 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     }
 
     private func lockSizeAfterMotion(_ frame: NSRect) {
-        setFrame(frame, display: true)
+        cancelMotionTask()
+        applyMotionFrame(frame, alpha: 1)
         minSize = AppPreferences.panelSize
         maxSize = AppPreferences.panelSize
         alphaValue = 1
@@ -256,6 +300,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     }
 
     private func finishHide() {
+        cancelMotionTask()
         hostingView?.alphaValue = 1
         alphaValue = 1
         minSize = AppPreferences.panelSize
@@ -263,6 +308,159 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         ignoresMouseEvents = false
         orderOut(nil)
         isDismissing = false
+    }
+
+    // MARK: - Anchored manual motion
+    //
+    // `animator().setFrame` animates a window's origin and size as separate
+    // Core Animation properties. Even when the seed and the target share the
+    // caret-adjacent edges (left + top for downward, left + bottom for upward),
+    // the two tweens interpolate independently with per-frame display rounding,
+    // so `origin + size` wobbles by fractions of a point each frame. That is the
+    // vertical jitter on downward expansion and the occasional horizontal shimmer.
+    // The animator group also enables implicit animations for descendant layers,
+    // so SwiftUI/glass layers lag one frame behind the window.
+    //
+    // This stepper interpolates width/height plus the *fixed* edges with a single
+    // eased progress value, derives the origin from the fixed edges every tick
+    // (so shared edges are exactly constant), snaps to backing pixels, and sets
+    // frames synchronously with all implicit actions disabled. Alpha follows the
+    // same eased progress. Real window resize is preserved (no scaling).
+
+    private func cancelMotionTask() {
+        motionTask?.cancel()
+        motionTask = nil
+    }
+
+    private func motionPixelScale() -> CGFloat {
+        let scale = screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
+        return scale > 0 ? scale : 2.0
+    }
+
+    private func snappedRect(_ rect: NSRect, scale: CGFloat) -> NSRect {
+        func snap(_ value: CGFloat) -> CGFloat { (value * scale).rounded() / scale }
+        return NSRect(x: snap(rect.minX), y: snap(rect.minY), width: snap(rect.width), height: snap(rect.height))
+    }
+
+    /// Cubic-bezier easing: solve x(t) = progress for t, return y(t).
+    private static func easedProgress(
+        _ x: Double,
+        c1x: Double, c1y: Double, c2x: Double, c2y: Double
+    ) -> Double {
+        func sampleX(_ t: Double) -> Double {
+            let u = 1 - t
+            return 3 * u * u * t * c1x + 3 * u * t * t * c2x + t * t * t
+        }
+        func sampleY(_ t: Double) -> Double {
+            let u = 1 - t
+            return 3 * u * u * t * c1y + 3 * u * t * t * c2y + t * t * t
+        }
+        func sampleDX(_ t: Double) -> Double {
+            let u = 1 - t
+            return 3 * u * u * c1x + 6 * u * t * (c2x - c1x) + 3 * t * t * (1 - c2x)
+        }
+        var t = x
+        for _ in 0..<8 {
+            let err = sampleX(t) - x
+            if abs(err) < 1e-6 { return sampleY(t) }
+            let d = sampleDX(t)
+            if abs(d) < 1e-6 { break }
+            t -= err / d
+            t = min(max(t, 0), 1)
+        }
+        var lo = 0.0
+        var hi = 1.0
+        t = x
+        while hi - lo > 1e-6 {
+            if sampleX(t) < x {
+                lo = t
+            } else {
+                hi = t
+            }
+            t = (lo + hi) / 2
+        }
+        return sampleY(t)
+    }
+
+    private func interpolatedMotionFrame(
+        from: NSRect, to: NSRect, pinsToTop: Bool, progress: Double, scale: CGFloat
+    ) -> NSRect {
+        let p = CGFloat(progress)
+        let width = from.width + (to.width - from.width) * p
+        let height = from.height + (to.height - from.height) * p
+        let minX = from.minX + (to.minX - from.minX) * p
+        let snappedWidth = ((width * scale).rounded()) / scale
+        let snappedHeight = ((height * scale).rounded()) / scale
+        let snappedMinX = ((minX * scale).rounded()) / scale
+        if pinsToTop {
+            let maxY = from.maxY + (to.maxY - from.maxY) * p
+            let snappedMaxY = ((maxY * scale).rounded()) / scale
+            return NSRect(x: snappedMinX, y: snappedMaxY - snappedHeight, width: snappedWidth, height: snappedHeight)
+        } else {
+            let minY = from.minY + (to.minY - from.minY) * p
+            let snappedMinY = ((minY * scale).rounded()) / scale
+            return NSRect(x: snappedMinX, y: snappedMinY, width: snappedWidth, height: snappedHeight)
+        }
+    }
+
+    private func applyMotionFrame(_ frame: NSRect, alpha: CGFloat) {
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        NSAnimationContext.beginGrouping()
+        NSAnimationContext.current.allowsImplicitAnimation = false
+        setFrame(frame, display: true)
+        alphaValue = alpha
+        hostingView?.alphaValue = alpha
+        NSAnimationContext.endGrouping()
+        CATransaction.commit()
+    }
+
+    private func startManualMotion(
+        from: NSRect, to: NSRect,
+        pinsToTop: Bool,
+        duration: TimeInterval,
+        isAppearing: Bool,
+        controlPoints: (x1: Double, y1: Double, x2: Double, y2: Double),
+        generation: Int,
+        completion: @MainActor @escaping () -> Void
+    ) {
+        cancelMotionTask()
+        let scale = motionPixelScale()
+        let fromSnapped = snappedRect(from, scale: scale)
+        let toSnapped = snappedRect(to, scale: scale)
+        // Zero-duration (or reduced-motion callers) must still land exactly.
+        guard duration > 0.001 else {
+            applyMotionFrame(toSnapped, alpha: isAppearing ? 1 : 0)
+            completion()
+            return
+        }
+        motionTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let start = CACurrentMediaTime()
+            while true {
+                if Task.isCancelled { break }
+                guard generation == self.motionGeneration else { break }
+                let elapsed = CACurrentMediaTime() - start
+                let linear = min(max(elapsed / duration, 0), 1)
+                let eased = Self.easedProgress(
+                    linear,
+                    c1x: controlPoints.x1, c1y: controlPoints.y1,
+                    c2x: controlPoints.x2, c2y: controlPoints.y2)
+                let frame = self.interpolatedMotionFrame(
+                    from: fromSnapped, to: toSnapped,
+                    pinsToTop: pinsToTop, progress: eased, scale: scale)
+                self.applyMotionFrame(frame, alpha: isAppearing ? CGFloat(eased) : CGFloat(1 - eased))
+                if linear >= 1 { break }
+                try? await Task.sleep(for: .milliseconds(8))
+            }
+            guard generation == self.motionGeneration, !Task.isCancelled else { return }
+            self.applyMotionFrame(toSnapped, alpha: isAppearing ? 1 : 0)
+            // Break the retain cycle only if no newer motion replaced us.
+            if generation == self.motionGeneration {
+                self.motionTask = nil
+            }
+            completion()
+        }
     }
 
     nonisolated override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
