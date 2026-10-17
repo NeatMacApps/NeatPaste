@@ -41,7 +41,20 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private var motionDone = true
     private var motionCompletion: (@MainActor () -> Void)?
     private var motionLinkTickCount = 0
-    private var motionLastLinkFire: CFTimeInterval = 0
+    /// Wall time when the display link last delivered. Stall detection must not
+    /// compare against the link's vsync timestamp: that timestamp is older than
+    /// the callback wall time by a variable latency, and mixing the two clocks
+    /// made the fallback fire between two vsyncs.
+    private var motionLastLinkWallTime: CFTimeInterval = 0
+    private var motionLinkHasFired = false
+    /// True once the fallback has taken over because the link never arrived (or
+    /// stalled). From then on link ticks are ignored, so the animation is driven
+    /// by exactly one clock.
+    private var motionFallbackOwnsClock = false
+    private var motionCreatedAt: CFTimeInterval = 0
+    /// Progress already rendered; never decreases, so an out-of-order timestamp
+    /// cannot make the window shrink and re-grow inside one expansion.
+    private var motionRenderedProgress: Double = 0
     private var motionLastFrameDuration: CFTimeInterval = 1.0 / 60.0
     /// False until the first vsync tick after ordering the panel front. The
     /// motion clock starts on that tick, not at setup: a cold first frame can
@@ -487,7 +500,11 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         motionDone = false
         motionCompletion = completion
         motionLinkTickCount = 0
-        motionLastLinkFire = 0
+        motionLastLinkWallTime = 0
+        motionLinkHasFired = false
+        motionFallbackOwnsClock = false
+        motionCreatedAt = CACurrentMediaTime()
+        motionRenderedProgress = 0
         motionLastFrameDuration = 1.0 / 60.0
         motionAwaitingFirstTick = true
         motionStartTime = 0
@@ -506,7 +523,18 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
                 if Task.isCancelled { break }
                 guard !self.motionDone, generation == self.motionGeneration else { break }
                 let now = CACurrentMediaTime()
-                if now - self.motionLastLinkFire < 0.012 { continue }
+                if !self.motionFallbackOwnsClock {
+                    if self.motionLinkHasFired {
+                        // The link is healthy: never co-drive it. Only take over
+                        // after it has been silent for a full stall window.
+                        guard now - self.motionLastLinkWallTime > 0.12 else { continue }
+                    } else {
+                        // Give the link a chance to start; a headless context
+                        // gets the fallback after this window.
+                        guard now - self.motionCreatedAt > 0.15 else { continue }
+                    }
+                    self.motionFallbackOwnsClock = true
+                }
                 if self.motionTick(now: now) { break }
             }
         }
@@ -521,8 +549,10 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
 
     private func motionLinkFiredOnMain(timestamp: CFTimeInterval, frameDuration: CFTimeInterval) {
         guard !motionDone, motionGenerationAtStart == motionGeneration else { return }
+        guard !motionFallbackOwnsClock else { return }
         motionLinkTickCount += 1
-        motionLastLinkFire = timestamp
+        motionLinkHasFired = true
+        motionLastLinkWallTime = CACurrentMediaTime()
         if frameDuration > 0 {
             motionLastFrameDuration = frameDuration
         }
@@ -550,10 +580,14 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             linear,
             c1x: motionControlPoints.x1, c1y: motionControlPoints.y1,
             c2x: motionControlPoints.x2, c2y: motionControlPoints.y2)
+        // Monotonic floor: a timestamp from a different clock (or a hitch) must
+        // never move the window backwards mid-motion.
+        let progress = max(eased, motionRenderedProgress)
+        motionRenderedProgress = progress
         let frame = interpolatedMotionFrame(
             from: motionFrom, to: motionTo,
-            pinsToTop: motionPinsToTop, progress: eased, scale: motionScale)
-        applyMotionFrame(frame, alpha: motionIsAppearing ? CGFloat(eased) : CGFloat(1 - eased))
+            pinsToTop: motionPinsToTop, progress: progress, scale: motionScale)
+        applyMotionFrame(frame, alpha: motionIsAppearing ? CGFloat(progress) : CGFloat(1 - progress))
         if linear >= 1 {
             finalizeMotion(now: now)
             return true

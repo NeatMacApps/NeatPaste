@@ -91,8 +91,8 @@ interpolates width/height plus the fixed edges with a single eased progress, der
 the origin from the fixed edges (shared edges stay exactly constant), snaps to backing
 pixels, and sets the frame synchronously with all implicit actions disabled. Ticks are
 paced by the display vsync (`NSWindow.displayLink`, common modes); a Task fallback
-only steps while the link is stalled, so a runloop timer never beats against the
-refresh and reads as judder. Progress is a pure function of wall time. The motion
+exists only for environments where the link never arrives, and the two never drive
+the same motion (see "One clock, one driver" below). Progress is a pure function of wall time. The motion
 clock starts on the first vsync tick, not at setup, so a cold first render (tens of
 milliseconds) cannot be charged to the curve and presented as one huge jump. The
 appear curve is a standard ease-out cubic. Reduced-motion paths keep their fade-only
@@ -110,6 +110,22 @@ planned duration rather than finishing in ~10 ticks (measured heights before the
 252, 284, 311, 363, 382, 393, 419, 425, 428, 430, 431, 432`). A time-based cap is not
 a substitute: any step budget tied to ticks changes speed with the display refresh,
 and any budget tied to elapsed time still lets a hitch teleport the panel.
+
+One clock, one driver (1.0.15). The display link delivers `CADisplayLink.timestamp`
+(vsync time) while the fallback Task reads `CACurrentMediaTime()` (wall time). The
+fallback's stall test compared one with the other and fired whenever the gap exceeded
+12 ms — shorter than an 8.3 ms 120 Hz frame plus callback latency — so it inserted a
+wall-clock frame between two vsyncs. The next link tick then carried an earlier
+timestamp, progress regressed, and the window visibly shrank 7–13 pt and grew back.
+Measured in the NeatEditor run: `h=304.5 fallback` immediately followed by `h=291.5
+link`, then `h=346.0 fallback` / `h=339.0 link`. Fix and rules: record the link's last
+delivery in wall time and only let the fallback take over after 120 ms of link silence
+(150 ms from motion start when no link has ever fired); once it takes over, link ticks
+are ignored for that motion. Never compare the link timestamp with the wall clock and
+never let both sources step one motion. Progress keeps a monotonic floor as a second
+guard, so no out-of-order timestamp can ever shrink the window mid-expansion. Healthy
+NeatEditor runs now show one driver for every tick, intervals of 8.3 ms, no negative
+dt, and strictly non-decreasing height (measured 13 consecutive show/hide motions).
 
 Content grows with the glass. Do not stage content behind a late fade-in (the glass
 was empty until 70% progress and the text popped in over the last 30%): that reads as
