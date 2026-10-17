@@ -150,11 +150,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 panelModel.needsAccessibilityPrompt = true
             }
             // Land reload churn while still ordered out: pre-layout realizes rows
-            // (thumbnail decode included), then two runloop turns flush render and
-            // the scroll reset. Only then start the visible expansion.
+            // (thumbnail decode included) before the visible expansion. The motion
+            // clock starts on the first presented frame, so no fixed delay is
+            // needed here; a sleep only made every invocation feel late.
             panel.prepareForShow()
-            try? await Task.sleep(for: .milliseconds(8))
-            try? await Task.sleep(for: .milliseconds(8))
             panel.showPanel(placement: placement)
         }
     }

@@ -127,16 +127,28 @@ final class HistoryPanelMotionCurveTests: XCTestCase {
     }
 
     @MainActor
-    func testContentStagingKeepsContentHiddenDuringGrowth() {
-        // Appear: settled content only fades in over the last stretch.
-        XCTAssertEqual(HistoryPanel.stagedContentAlpha(progress: 0, isAppearing: true), 0)
-        XCTAssertEqual(HistoryPanel.stagedContentAlpha(progress: 0.69, isAppearing: true), 0)
-        XCTAssertGreaterThan(HistoryPanel.stagedContentAlpha(progress: 0.85, isAppearing: true), 0)
-        XCTAssertEqual(
-            HistoryPanel.stagedContentAlpha(progress: 1, isAppearing: true), 1, accuracy: 1e-9)
-        // Dismiss: content drops first, glass recedes after.
-        XCTAssertEqual(HistoryPanel.stagedContentAlpha(progress: 0, isAppearing: false), 1)
-        XCTAssertEqual(
-            HistoryPanel.stagedContentAlpha(progress: 1, isAppearing: false), 0, accuracy: 1e-9)
+    func testMotionSpanTracksWallClockInsteadOfTickCount() {
+        let model = HistoryPanelModel(history: InMemoryHistoryStore(records: InMemoryHistoryStore.fixtureItems()))
+        let panel = HistoryPanel(model: model)
+        defer { panel.orderOut(nil) }
+        let target = NSRect(x: 200, y: 200, width: 320, height: 432)
+        let seed = NSRect(x: target.minX, y: target.maxY - 36, width: 36, height: 36)
+        panel.showPanel(placement: PanelAnchor.Placement(
+            frame: target, seed: seed, pinsContentToTop: true))
+
+        // Sampling every ~8 ms for 240 ms: a wall-clock 0.18 s motion must
+        // still be in flight for most of the samples. The per-tick 10 % cap
+        // finished in ~10 ticks on a 120 Hz display (measured 7–9 samples),
+        // which is exactly the staircase users saw.
+        var heights: [CGFloat] = []
+        let deadline = Date().addingTimeInterval(0.24)
+        while Date() < deadline {
+            heights.append(panel.frame.height)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.008))
+        }
+        let inFlight = heights.filter { $0 > 36.5 && $0 < target.height - 0.5 }
+        XCTAssertGreaterThanOrEqual(
+            inFlight.count, 12,
+            "0.18 s motion must span the planned duration, not finish in ~10 ticks: \(heights)")
     }
 }

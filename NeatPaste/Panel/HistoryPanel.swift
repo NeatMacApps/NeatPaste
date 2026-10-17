@@ -43,15 +43,11 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private var motionLinkTickCount = 0
     private var motionLastLinkFire: CFTimeInterval = 0
     private var motionLastFrameDuration: CFTimeInterval = 1.0 / 60.0
-    // Eased-space progress actually rendered. Ticks advance it toward the wall-clock
-    // target by at most maxProgressStep, so a hitch stretches the motion instead of
-    // teleporting the window (measured: 77%+ of growth in one frame).
-    private var motionProgress: Double = 0
-    private static let maxProgressStep = 0.1
-    private var motionCappedTicks = 0
-    // Fresh appear / dismiss restage content (glass grows first, settled content
-    // fades in late). Re-anchor while visible keeps content up throughout.
-    private var motionRestageContent = true
+    /// False until the first vsync tick after ordering the panel front. The
+    /// motion clock starts on that tick, not at setup: a cold first frame can
+    /// take tens of milliseconds, and charging that to the eased curve made the
+    /// first presented frame jump to most of the final size.
+    private var motionAwaitingFirstTick = true
 
     /// Visible and not in the middle of shrinking away. Hotkey toggle uses this.
     var isPresented: Bool { isVisible && !isDismissing }
@@ -209,13 +205,11 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         if resumeFromCurrent {
             // Already visible (e.g. re-anchor while open): still drive through
             // the anchored stepper so a shared edge never lerps independently.
-            // Content is already up: keep it up instead of restaging.
             startManualMotion(
                 from: startFrame, to: targetFrame,
                 pinsToTop: snappedPlacement.pinsContentToTop,
                 duration: PanelMotion.appearDuration, isAppearing: true,
                 controlPoints: PanelMotion.appearControlPoints,
-                restageContent: false,
                 generation: generation) { [weak self] in
                     self?.performOnMain {
                         guard let self, generation == self.motionGeneration else { return }
@@ -230,7 +224,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             pinsToTop: snappedPlacement.pinsContentToTop,
             duration: PanelMotion.appearDuration, isAppearing: true,
             controlPoints: PanelMotion.appearControlPoints,
-            restageContent: true,
             generation: generation) { [weak self] in
                 self?.performOnMain {
                     guard let self, generation == self.motionGeneration else { return }
@@ -308,7 +301,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             pinsToTop: pinsToTop,
             duration: PanelMotion.dismissDuration, isAppearing: false,
             controlPoints: PanelMotion.dismissControlPoints,
-            restageContent: true,
             generation: generation) { [weak self] in
                 self?.performOnMain {
                     guard let self, generation == self.motionGeneration else { return }
@@ -453,35 +445,16 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         }
     }
 
-    private func applyMotionFrame(_ frame: NSRect, windowAlpha: CGFloat, contentAlpha: CGFloat) {
+    private func applyMotionFrame(_ frame: NSRect, alpha: CGFloat) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         NSAnimationContext.beginGrouping()
         NSAnimationContext.current.allowsImplicitAnimation = false
         setFrame(frame, display: true)
-        alphaValue = windowAlpha
-        hostingView?.alphaValue = contentAlpha
+        alphaValue = alpha
+        hostingView?.alphaValue = alpha
         NSAnimationContext.endGrouping()
         CATransaction.commit()
-    }
-
-    /// Backward-compatible single-alpha entry: window and content together.
-    private func applyMotionFrame(_ frame: NSRect, alpha: CGFloat) {
-        applyMotionFrame(frame, windowAlpha: alpha, contentAlpha: alpha)
-    }
-
-    /// Smoothstep staging for content: appear fades settled content in over the
-    /// last stretch of growth, dismiss drops it over the first stretch.
-    static func stagedContentAlpha(progress: Double, isAppearing: Bool) -> Double {
-        func smoothstep(_ x: Double, edge0: Double, edge1: Double) -> Double {
-            let t = min(max((x - edge0) / (edge1 - edge0), 0), 1)
-            return t * t * (3 - 2 * t)
-        }
-        if isAppearing {
-            return smoothstep(progress, edge0: 0.7, edge1: 1.0)
-        } else {
-            return 1 - smoothstep(progress, edge0: 0.0, edge1: 0.35)
-        }
     }
 
     private func startManualMotion(
@@ -490,7 +463,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         duration: TimeInterval,
         isAppearing: Bool,
         controlPoints: (x1: Double, y1: Double, x2: Double, y2: Double),
-        restageContent: Bool,
         generation: Int,
         completion: @MainActor @escaping () -> Void
     ) {
@@ -517,10 +489,8 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         motionLinkTickCount = 0
         motionLastLinkFire = 0
         motionLastFrameDuration = 1.0 / 60.0
-        motionProgress = 0
-        motionCappedTicks = 0
-        motionRestageContent = restageContent
-        motionStartTime = CACurrentMediaTime()
+        motionAwaitingFirstTick = true
+        motionStartTime = 0
         model.isMotionActive = true
 
         let link = displayLink(target: self, selector: #selector(motionLinkFired(_:)))
@@ -560,41 +530,31 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     }
 
     /// Applies one eased frame. Returns true when the motion reached its end.
-    /// Rendered progress advances toward the wall-clock target by at most
-    /// maxProgressStep per tick: a hitch stretches the motion instead of
-    /// teleporting the window, so no single frame can carry it.
+    /// Progress is a pure function of wall time. Capping it per tick made a
+    /// 120 Hz display render ten 40 px steps (~80 ms total) instead of the
+    /// intended 180 ms ease-out, and let the fallback Task spend two steps in
+    /// one refresh; both read as vertical jitter at every invocation.
     @discardableResult
     private func motionTick(now: CFTimeInterval) -> Bool {
         guard !motionDone, motionGenerationAtStart == motionGeneration else { return true }
+        if motionAwaitingFirstTick {
+            // Start the clock on the first presented frame: setup time and a
+            // cold first render must not be charged to the easing curve. Do not
+            // render progress 0 here: a visible re-anchor would flash alpha 0.
+            motionAwaitingFirstTick = false
+            motionStartTime = now
+            return false
+        }
         let linear = min(max((now - motionStartTime) / motionDuration, 0), 1)
-        let wallTarget = Self.easedProgress(
+        let eased = Self.easedProgress(
             linear,
             c1x: motionControlPoints.x1, c1y: motionControlPoints.y1,
             c2x: motionControlPoints.x2, c2y: motionControlPoints.y2)
-        let step = min(wallTarget - motionProgress, Self.maxProgressStep)
-        if step <= 0 {
-            if linear >= 1, motionProgress >= 1 - 1e-9 {
-                finalizeMotion(now: now)
-                return true
-            }
-            return false
-        }
-        if wallTarget - motionProgress > Self.maxProgressStep {
-            motionCappedTicks += 1
-        }
-        motionProgress += step
         let frame = interpolatedMotionFrame(
             from: motionFrom, to: motionTo,
-            pinsToTop: motionPinsToTop, progress: motionProgress, scale: motionScale)
-        let windowAlpha = motionIsAppearing ? CGFloat(motionProgress) : CGFloat(1 - motionProgress)
-        let contentAlpha: CGFloat
-        if motionRestageContent {
-            contentAlpha = CGFloat(Self.stagedContentAlpha(progress: motionProgress, isAppearing: motionIsAppearing))
-        } else {
-            contentAlpha = 1
-        }
-        applyMotionFrame(frame, windowAlpha: windowAlpha, contentAlpha: contentAlpha)
-        if linear >= 1, motionProgress >= 1 - 1e-9 {
+            pinsToTop: motionPinsToTop, progress: eased, scale: motionScale)
+        applyMotionFrame(frame, alpha: motionIsAppearing ? CGFloat(eased) : CGFloat(1 - eased))
+        if linear >= 1 {
             finalizeMotion(now: now)
             return true
         }
@@ -625,11 +585,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
                     "[NeatPaste] panel motion dropped frames: %d vsync ticks vs %.0f expected (%.3fs)",
                     CInt(motionLinkTickCount), expected, motionDuration)
             }
-        }
-        if motionCappedTicks > 2 {
-            NSLog(
-                "[NeatPaste] panel motion capped %d ticks (hitch absorbed, motion stretched)",
-                CInt(motionCappedTicks))
         }
         guard let completion = motionCompletion else { return }
         motionCompletion = nil

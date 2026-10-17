@@ -92,28 +92,37 @@ the origin from the fixed edges (shared edges stay exactly constant), snaps to b
 pixels, and sets the frame synchronously with all implicit actions disabled. Ticks are
 paced by the display vsync (`NSWindow.displayLink`, common modes); a Task fallback
 only steps while the link is stalled, so a runloop timer never beats against the
-refresh and reads as judder. Rendered progress advances toward the wall-clock target
-by at most 10% per tick: a hitch stretches the motion instead of teleporting the
-window (measured before the cap: 77%+ of growth in a single first frame). The appear
-curve is a standard ease-out cubic, deliberately not front-loaded. Reduced-motion
-paths keep their fade-only behavior with `allowsImplicitAnimation = false` set
-explicitly. Real window resize is preserved (no scaling, no bounce, same 0.18/0.12 s
-pacing).
+refresh and reads as judder. Progress is a pure function of wall time. The motion
+clock starts on the first vsync tick, not at setup, so a cold first render (tens of
+milliseconds) cannot be charged to the curve and presented as one huge jump. The
+appear curve is a standard ease-out cubic. Reduced-motion paths keep their fade-only
+behavior with `allowsImplicitAnimation = false` set explicitly. Real window resize is
+preserved (no scaling, no bounce, same 0.18/0.12 s pacing).
 
-Content never participates in growth: on fresh appear the glass grows with content
-held at alpha 0 and settled content fades in over the last stretch; on dismiss
-content drops first and the glass recedes after (smoothstep staging in
-`HistoryPanel.stagedContentAlpha`, unit-pinned). Re-anchor while visible keeps
-content up throughout. The list also suppresses `ScrollViewReader.scrollTo` while
-`HistoryPanelModel.isMotionActive` is set (instant non-animated scroll otherwise) and
-snaps once when motion ends. Reload churn is still landed while ordered out:
-`HistoryPanel.prepareForShow` pre-lays out rows (thumbnail decode included) and
-`AppDelegate.showPanel` yields two runloop turns to flush render plus the scroll
-reset before the first visible frame, so content is fully realized before its
-late fade-in begins. This matters most for the copy-then-invoke flow where a new
-row prepends and the selection resets on every show. Anomaly-only telemetry logs
-slow motions, dropped vsync ticks, and absorbed hitches; healthy motions stay
-silent.
+Do not reintroduce a per-tick progress cap. A 10%-per-tick cap was tried and made
+every invocation worse: on the 120 Hz MacBook display it turned the 0.18 s ease-out
+into a fixed 10-tick staircase (~80 ms) with 40 px steps, and because the fallback
+Task and the display link can both tick inside one refresh, some frames advanced two
+steps at once (79 px). The user reported the jitter moving from one editor to every
+app. `HistoryPanelMotionTests` now asserts that the show motion still spans the
+planned duration rather than finishing in ~10 ticks (measured heights before the fix:
+`36, 115, 155, 195, 274, 313, 353, 419, 425, 428, 432`; after: `36, 43, 125, 172,
+252, 284, 311, 363, 382, 393, 419, 425, 428, 430, 431, 432`). A time-based cap is not
+a substitute: any step budget tied to ticks changes speed with the display refresh,
+and any budget tied to elapsed time still lets a hitch teleport the panel.
+
+Content grows with the glass. Do not stage content behind a late fade-in (the glass
+was empty until 70% progress and the text popped in over the last 30%): that reads as
+"hitch, then grow" on every invocation and was reverted. The list still suppresses
+`ScrollViewReader.scrollTo` while `HistoryPanelModel.isMotionActive` is set (instant
+non-animated scroll otherwise) and snaps once when motion ends. Reload churn is
+landed while ordered out: `HistoryPanel.prepareForShow` pre-lays out rows (thumbnail
+decode included) before the visible expansion. Do not add fixed sleeps before
+showing; the motion clock already waits for the first presented frame, and a fixed
+delay only makes every invocation feel late. This matters most for the
+copy-then-invoke flow where a new row prepends and the selection resets on every
+show. Anomaly-only telemetry logs slow motions and dropped vsync ticks; healthy
+motions stay silent.
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable
