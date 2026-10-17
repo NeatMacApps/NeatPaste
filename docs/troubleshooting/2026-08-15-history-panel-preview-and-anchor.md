@@ -96,6 +96,22 @@ absence of compositor jitter.
   Retain this tool-generated warning rather than add an unused dependency or suppress
   diagnostics. Reassess if an App Intents feature is introduced.
 
+### Verification scope (1.0.12)
+
+Xcode 27.2 / macOS 27.2: all 81 Debug tests and static analysis passed. The motion
+regression sampled 30 live window sizes in each direction, confirmed in-flight resize
+samples and stable caret/content edges within 0.5 pt, and rejected independent geometry
+animations on the hosted layer while allowing its intended opacity fade. Six native
+view-render attachments from downward expansion were inspected. Release archive/export
+compiled arm64 and x86_64; the installed 1.0.12 (13) executable matched the exported
+artifact. The installed panel was opened through Settings > More > Open Panel, captured
+with the native computer tool and dismissed with Esc. Existing history remained visible.
+
+The terminal execution host has no Screen Recording or Accessibility access. Its window
+screenshot helper could not capture the panel; the native computer tool supplied the
+installed-window capture instead. Native cached view renders do not establish compositor
+frame pacing, and no continuous desktop recording is claimed.
+
 ### Release workflow
 
 The publisher now uses Developer ID archive/export, reusing NeatWebApp's release workflow
