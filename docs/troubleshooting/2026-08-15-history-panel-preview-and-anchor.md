@@ -95,7 +95,8 @@ exists only for environments where the link never arrives, and the two never dri
 the same motion (see "One clock, one driver" below). Progress is a pure function of wall time. The motion
 clock starts on the first vsync tick, not at setup, so a cold first render (tens of
 milliseconds) cannot be charged to the curve and presented as one huge jump. The
-appear curve is a standard ease-out cubic. Reduced-motion paths keep their fade-only
+appear curve is now ease-in-out (see "Thumbnail decode on the main thread" below).
+Reduced-motion paths keep their fade-only
 behavior with `allowsImplicitAnimation = false` set explicitly. Real window resize is
 preserved (no scaling, no bounce, same 0.18/0.12 s pacing).
 
@@ -111,7 +112,7 @@ planned duration rather than finishing in ~10 ticks (measured heights before the
 a substitute: any step budget tied to ticks changes speed with the display refresh,
 and any budget tied to elapsed time still lets a hitch teleport the panel.
 
-One clock, one driver (1.0.15). The display link delivers `CADisplayLink.timestamp`
+One clock, one driver (1.0.16). The display link delivers `CADisplayLink.timestamp`
 (vsync time) while the fallback Task reads `CACurrentMediaTime()` (wall time). The
 fallback's stall test compared one with the other and fired whenever the gap exceeded
 12 ms — shorter than an 8.3 ms 120 Hz frame plus callback latency — so it inserted a
@@ -132,13 +133,56 @@ was empty until 70% progress and the text popped in over the last 30%): that rea
 "hitch, then grow" on every invocation and was reverted. The list still suppresses
 `ScrollViewReader.scrollTo` while `HistoryPanelModel.isMotionActive` is set (instant
 non-animated scroll otherwise) and snaps once when motion ends. Reload churn is
-landed while ordered out: `HistoryPanel.prepareForShow` pre-lays out rows (thumbnail
-decode included) before the visible expansion. Do not add fixed sleeps before
-showing; the motion clock already waits for the first presented frame, and a fixed
-delay only makes every invocation feel late. This matters most for the
+landed while ordered out: `HistoryPanel.prepareForShow` pre-lays out rows before
+the visible expansion. Thumbnail decoding itself is asynchronous and must stay off
+the main thread (see below). Do not add fixed sleeps before showing; the motion
+clock already waits for the first presented frame, and a fixed delay only makes
+every invocation feel late. This matters most for the
 copy-then-invoke flow where a new row prepends and the selection resets on every
 show. Anomaly-only telemetry logs slow motions and dropped vsync ticks; healthy
 motions stay silent.
+
+Thumbnail decode on the main thread (1.0.17). Geometry telemetry during the
+reported jitter showed zero edge error, zero glass/pin error and no layer
+animations, yet `CADisplayLink.timestamp` gaps of 25–64 ms: the window was being
+placed correctly but whole vsyncs were missed. Sampling the process showed the
+stalls on the main thread inside display/transaction work, and their heights
+matched the rows that had just become visible. `HistoryRowView` called
+`HistoryThumbnail.image(for:)` synchronously in its SwiftUI body; that function
+read the payload file and ran ImageIO downsampling. The newest entry was a
+7.2 MB screenshot, and the stalls landed at h≈156 and h≈384 — exactly when the
+rows holding the large images first rendered. A first show after launch produced
+only 10–13 motion frames over ~200 ms; episodes with fewer new rows produced 21–22.
+
+Fix: the row body only reads an `NSCache` (`HistoryThumbnail.cachedImage(for:)`,
+no I/O). Decoding runs in `Task.detached(priority: .utility)` behind a per-item
+`DecodeRegistry`, so a row that scrolls in and out does not start duplicate
+decodes. `AppDelegate.showPanel` calls `HistoryThumbnail.prewarm` for the first
+12 image items after reload, so the first visible rows are usually ready before
+the expansion reaches them; a row that is not ready yet keeps its photo
+placeholder and swaps in when the decode completes. Tests are async and call
+`loadImage(for:)` before reading the cache. With this in place, a clean first
+show after launch measured 22 frames / 175 ms with no gaps, and four
+non-overlapping cycles measured 21, 21, 22 and 22 appearance frames (dismissals
+15 frames).
+
+Two motion changes landed with it. Per-frame opacity is gone — the window and
+hosting view stay at alpha 1, so the glass is not recomposited every tick (the
+old fade also squared the effective opacity of the window and content together).
+And frames are set with `display: false`; forcing a display pass on every 120 Hz
+tick made the glass re-render on the main thread. The appear curve is
+ease-in-out (0.4, 0.0, 0.2, 1.0): its fastest section is in the middle, so one
+dropped vsync cannot double or triple the height step. Reduced-motion still
+uses the 0.08 s fade and was left unchanged.
+
+Do not put image decoding, file reads or payload materialization back into a
+SwiftUI body, and do not make the cache lookup fall back to a synchronous
+decode on a miss — that reintroduces the stall only on the first show, which is
+the invocation users notice. Do not restore per-frame alpha or `display: true`;
+both were measured to cost frames. Residual limit: a payload whose decode has
+not finished when its row becomes visible shows the placeholder for a few
+frames; prewarm makes this rare, and swapping the thumbnail in does not resize
+the row.
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable

@@ -6,7 +6,7 @@ import XCTest
 @preconcurrency import Carbon
 
 final class HistoryThumbnailTests: XCTestCase {
-    func test_能从外置旁路文件做出缩略图() throws {
+    func test_能从外置旁路文件做出缩略图() async throws {
         let dir = FileManager.default.temporaryDirectory.appendingPathComponent("neatpaste-thumb-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: dir) }
@@ -27,12 +27,13 @@ final class HistoryThumbnailTests: XCTestCase {
             externalPayloadTypes: ["public.png"],
             payloadDirectoryURL: dir
         )
-        let thumbnail = HistoryThumbnail.image(for: item)
+        await HistoryThumbnail.loadImage(for: item)
+        let thumbnail = HistoryThumbnail.cachedImage(for: item)
         XCTAssertNotNil(thumbnail)
         XCTAssertGreaterThan(thumbnail?.size.width ?? 0, 0)
     }
 
-    func test_能从png字节做出缩略图() {
+    func test_能从png字节做出缩略图() async {
         let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")!
         let item = HistoryItem(
             id: UUID(),
@@ -43,7 +44,8 @@ final class HistoryThumbnailTests: XCTestCase {
             types: ["public.png"],
             payloads: ["public.png": png]
         )
-        let thumbnail = HistoryThumbnail.image(for: item)
+        await HistoryThumbnail.loadImage(for: item)
+        let thumbnail = HistoryThumbnail.cachedImage(for: item)
         XCTAssertNotNil(thumbnail)
         XCTAssertGreaterThan(thumbnail?.size.width ?? 0, 0)
         XCTAssertGreaterThan(thumbnail?.size.height ?? 0, 0)

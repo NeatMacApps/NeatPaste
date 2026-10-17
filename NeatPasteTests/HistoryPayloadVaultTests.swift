@@ -110,7 +110,8 @@ final class HistoryPayloadVaultTests: XCTestCase {
         XCTAssertTrue(rewritten.contains("externalPayloadTypes"))
         XCTAssertFalse(rewritten.contains(png.base64EncodedString()))
 
-        let thumb = HistoryThumbnail.image(for: items[0])
+        await HistoryThumbnail.loadImage(for: items[0])
+        let thumb = HistoryThumbnail.cachedImage(for: items[0])
         XCTAssertNotNil(thumb)
 
         let preview = try QuickLookPreviewFile.makeURL(for: items[0])

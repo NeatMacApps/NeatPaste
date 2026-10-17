@@ -178,6 +178,8 @@ private struct HistoryRowView: View {
     let isSelected: Bool
     let isHovered: Bool
 
+    @State private var loadedThumbnail: NSImage?
+
     var body: some View {
         HStack(spacing: 10) {
             artwork
@@ -201,6 +203,12 @@ private struct HistoryRowView: View {
         .focusEffectDisabled()
         .accessibilityAddTraits(isSelected ? .isSelected : [])
         .accessibilityValue(HistoryTime.string(from: item.createdAt))
+        .task(id: item.id) {
+            guard item.hasImage else { return }
+            if HistoryThumbnail.cachedImage(for: item) != nil { return }
+            await HistoryThumbnail.loadImage(for: item)
+            loadedThumbnail = HistoryThumbnail.cachedImage(for: item)
+        }
     }
 
     private var rowFill: Color {
@@ -234,7 +242,7 @@ private struct HistoryRowView: View {
     @ViewBuilder
     private var imageArtwork: some View {
         let shape = RoundedRectangle(cornerRadius: 6, style: .continuous)
-        if let thumbnail = HistoryThumbnail.image(for: item) {
+        if let thumbnail = loadedThumbnail ?? HistoryThumbnail.cachedImage(for: item) {
             Image(nsImage: thumbnail)
                 .resizable()
                 .interpolation(.medium)

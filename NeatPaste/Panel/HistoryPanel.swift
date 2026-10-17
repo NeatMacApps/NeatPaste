@@ -182,12 +182,13 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         if !resumeFromCurrent {
             startFrame = targetSeed
             if PanelMotion.prefersReducedMotion {
-                applyMotionFrame(targetFrame, alpha: 1)
+                applyMotionFrame(targetFrame)
+                // Reduced motion keeps a short fade; the stepper itself does not.
+                hostingView?.alphaValue = 0
+                alphaValue = 0
             } else {
-                applyMotionFrame(startFrame, alpha: 0)
+                applyMotionFrame(startFrame)
             }
-            hostingView?.alphaValue = 0
-            alphaValue = 0
         } else {
             startFrame = frame
         }
@@ -336,7 +337,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
 
     private func lockSizeAfterMotion(_ frame: NSRect) {
         cancelMotionTask()
-        applyMotionFrame(frame, alpha: 1)
+        applyMotionFrame(frame)
         minSize = AppPreferences.panelSize
         maxSize = AppPreferences.panelSize
         alphaValue = 1
@@ -458,14 +459,17 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         }
     }
 
-    private func applyMotionFrame(_ frame: NSRect, alpha: CGFloat) {
+    private func applyMotionFrame(_ frame: NSRect) {
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         NSAnimationContext.beginGrouping()
         NSAnimationContext.current.allowsImplicitAnimation = false
-        setFrame(frame, display: true)
-        alphaValue = alpha
-        hostingView?.alphaValue = alpha
+        // Geometry only. Redraw in the normal display cycle: forcing
+        // displayIfNeeded on every 120 Hz tick made the glass re-render on
+        // the main thread and caused 16–51 ms gaps between vsyncs.
+        setFrame(frame, display: false)
+        alphaValue = 1
+        hostingView?.alphaValue = 1
         NSAnimationContext.endGrouping()
         CATransaction.commit()
     }
@@ -485,7 +489,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         let toSnapped = snappedRect(to, scale: scale)
         // Zero-duration (or reduced-motion callers) must still land exactly.
         guard duration > 0.001 else {
-            applyMotionFrame(toSnapped, alpha: isAppearing ? 1 : 0)
+            applyMotionFrame(toSnapped)
             completion()
             return
         }
@@ -587,7 +591,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         let frame = interpolatedMotionFrame(
             from: motionFrom, to: motionTo,
             pinsToTop: motionPinsToTop, progress: progress, scale: motionScale)
-        applyMotionFrame(frame, alpha: motionIsAppearing ? CGFloat(progress) : CGFloat(1 - progress))
+        applyMotionFrame(frame)
         if linear >= 1 {
             finalizeMotion(now: now)
             return true
@@ -604,7 +608,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         }
         motionFallbackTask?.cancel()
         motionFallbackTask = nil
-        applyMotionFrame(motionTo, alpha: motionIsAppearing ? 1 : 0)
+        applyMotionFrame(motionTo)
         model.isMotionActive = false
         // Anomaly-only telemetry: silent when pacing is healthy.
         let elapsed = now - motionStartTime

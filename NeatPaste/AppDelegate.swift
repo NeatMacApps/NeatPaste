@@ -146,6 +146,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         Task { @MainActor in
             await clipboardMonitor.poll()
             await panelModel.reload()
+            // Decode thumbnails off the main thread; growing the window exposes
+            // new rows, and a synchronous decode there stalled whole frames.
+            HistoryThumbnail.prewarm(panelModel.visibleItems)
             if keepPrompt {
                 panelModel.needsAccessibilityPrompt = true
             }
