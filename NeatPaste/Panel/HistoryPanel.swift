@@ -36,7 +36,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private var motionDuration: TimeInterval = 0
     private var motionIsAppearing = true
     private var motionControlPoints = PanelMotion.appearControlPoints
-    private var motionScale: CGFloat = 2
     private var motionGenerationAtStart = 0
     private var motionDone = true
     private var motionCompletion: (@MainActor () -> Void)?
@@ -161,8 +160,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         cancelMotionTask()
         motionGeneration += 1
         let generation = motionGeneration
-        let scale = motionPixelScale()
-        let targetFrame = snappedRect(placement.frame, scale: scale)
+        let targetFrame = Self.windowAlignedRect(placement.frame)
         // Derive the droplet from the snapped target so the shared edges
         // (left + caret-adjacent) are exactly equal, not just close.
         let seedLength = min(PanelAnchor.seedLength, targetFrame.width, targetFrame.height)
@@ -283,8 +281,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         }
 
         let pinsToTop = currentPlacement?.pinsContentToTop ?? true
-        let scale = motionPixelScale()
-        let fromFrame = snappedRect(frame, scale: scale)
+        let fromFrame = Self.windowAlignedRect(frame)
         let seedLength = min(PanelAnchor.seedLength, fromFrame.width, fromFrame.height)
         // Shrink back into the same caret-adjacent corner we grew from,
         // derived from the current frame so the shared edges stay exact.
@@ -369,9 +366,9 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     //
     // This stepper interpolates width/height plus the *fixed* edges with a single
     // eased progress value, derives the origin from the fixed edges every tick
-    // (so shared edges are exactly constant), snaps to backing pixels, and sets
-    // frames synchronously with all implicit actions disabled. Alpha follows the
-    // same eased progress. Ticks are driven by the display vsync (CADisplayLink);
+    // (so shared edges are exactly constant), aligns to native screen points, and sets
+    // frames synchronously with all implicit actions disabled. Ticks are driven
+    // by the display vsync (CADisplayLink);
     // a Task fallback only steps while the link is stalled, so a runloop timer
     // never beats against the refresh and reads as judder. Real window resize is
     // preserved (no scaling).
@@ -387,14 +384,13 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         motionDone = true
     }
 
-    private func motionPixelScale() -> CGFloat {
-        let scale = screen?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2.0
-        return scale > 0 ? scale : 2.0
-    }
-
-    private func snappedRect(_ rect: NSRect, scale: CGFloat) -> NSRect {
-        func snap(_ value: CGFloat) -> CGFloat { (value * scale).rounded() / scale }
-        return NSRect(x: snap(rect.minX), y: snap(rect.minY), width: snap(rect.width), height: snap(rect.height))
+    /// AppKit quantizes native window origins and sizes to whole screen points,
+    /// even on Retina displays. A half-point fixed edge alternates by one point
+    /// when origin and size are rounded independently during the resize.
+    static func windowAlignedRect(_ rect: NSRect) -> NSRect {
+        NSRect(
+            x: rect.minX.rounded(.down), y: rect.minY.rounded(.down),
+            width: rect.width.rounded(), height: rect.height.rounded())
     }
 
     /// Cubic-bezier easing: solve x(t) = progress for t, return y(t).
@@ -438,23 +434,23 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         return sampleY(t)
     }
 
-    private func interpolatedMotionFrame(
-        from: NSRect, to: NSRect, pinsToTop: Bool, progress: Double, scale: CGFloat
+    static func interpolatedMotionFrame(
+        from: NSRect, to: NSRect, pinsToTop: Bool, progress: Double
     ) -> NSRect {
         let p = CGFloat(progress)
         let width = from.width + (to.width - from.width) * p
         let height = from.height + (to.height - from.height) * p
         let minX = from.minX + (to.minX - from.minX) * p
-        let snappedWidth = ((width * scale).rounded()) / scale
-        let snappedHeight = ((height * scale).rounded()) / scale
-        let snappedMinX = ((minX * scale).rounded()) / scale
+        let snappedWidth = width.rounded()
+        let snappedHeight = height.rounded()
+        let snappedMinX = minX.rounded()
         if pinsToTop {
             let maxY = from.maxY + (to.maxY - from.maxY) * p
-            let snappedMaxY = ((maxY * scale).rounded()) / scale
+            let snappedMaxY = maxY.rounded()
             return NSRect(x: snappedMinX, y: snappedMaxY - snappedHeight, width: snappedWidth, height: snappedHeight)
         } else {
             let minY = from.minY + (to.minY - from.minY) * p
-            let snappedMinY = ((minY * scale).rounded()) / scale
+            let snappedMinY = minY.rounded()
             return NSRect(x: snappedMinX, y: snappedMinY, width: snappedWidth, height: snappedHeight)
         }
     }
@@ -484,9 +480,8 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         completion: @MainActor @escaping () -> Void
     ) {
         cancelMotionTask()
-        let scale = motionPixelScale()
-        let fromSnapped = snappedRect(from, scale: scale)
-        let toSnapped = snappedRect(to, scale: scale)
+        let fromSnapped = Self.windowAlignedRect(from)
+        let toSnapped = Self.windowAlignedRect(to)
         // Zero-duration (or reduced-motion callers) must still land exactly.
         guard duration > 0.001 else {
             applyMotionFrame(toSnapped)
@@ -499,7 +494,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         motionDuration = duration
         motionIsAppearing = isAppearing
         motionControlPoints = controlPoints
-        motionScale = scale
         motionGenerationAtStart = generation
         motionDone = false
         motionCompletion = completion
@@ -588,9 +582,9 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         // never move the window backwards mid-motion.
         let progress = max(eased, motionRenderedProgress)
         motionRenderedProgress = progress
-        let frame = interpolatedMotionFrame(
+        let frame = Self.interpolatedMotionFrame(
             from: motionFrom, to: motionTo,
-            pinsToTop: motionPinsToTop, progress: progress, scale: motionScale)
+            pinsToTop: motionPinsToTop, progress: progress)
         applyMotionFrame(frame)
         if linear >= 1 {
             finalizeMotion(now: now)

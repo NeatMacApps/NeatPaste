@@ -1,6 +1,6 @@
-# 历史面板：预览尺寸、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、搜索与玻璃、点选粘贴、滚动条
+# 历史面板：预览尺寸、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、搜索与玻璃、点选粘贴、滚动条、展开抖动与帧调度
 
-文档定位：历史面板已证伪路径与必须留下的拦法。覆盖系统预览尺寸/换条闪动、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、滚动条、搜索与玻璃、点选粘贴。产品行为以 [PRODUCT_CONTRACT.md](../PRODUCT_CONTRACT.md) 为准。
+文档定位：历史面板已证伪路径与必须留下的拦法。覆盖系统预览尺寸/换条闪动、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、滚动条、搜索与玻璃、点选粘贴、展开时的上下抖动与逐帧调度。展开抖动在 1.0.17 仍未通过用户实机验收，原因未确认；不要把它当成已修。产品行为以 [PRODUCT_CONTRACT.md](../PRODUCT_CONTRACT.md) 为准。
 
 ## 预览必须是系统预览，且必须一直是小窗
 
@@ -142,7 +142,15 @@ copy-then-invoke flow where a new row prepends and the selection resets on every
 show. Anomaly-only telemetry logs slow motions and dropped vsync ticks; healthy
 motions stay silent.
 
-Thumbnail decode on the main thread (1.0.17). Geometry telemetry during the
+Thumbnail decode on the main thread (1.0.17) — mitigation, cause not confirmed.
+Status (2026-10-17): 1.0.17 (18) was built and installed locally, and the user
+still reports vertical judder in NeatEditor. The synchronous decode below was a
+real first-open stall and removing it improved frame pacing, but frame pacing
+improving did not remove the perceived jitter. Do not describe this change as
+the fix and do not close the symptom on telemetry alone; the remaining cause is
+unresolved.
+
+Geometry telemetry during the
 reported jitter showed zero edge error, zero glass/pin error and no layer
 animations, yet `CADisplayLink.timestamp` gaps of 25–64 ms: the window was being
 placed correctly but whole vsyncs were missed. Sampling the process showed the
@@ -154,7 +162,7 @@ read the payload file and ran ImageIO downsampling. The newest entry was a
 rows holding the large images first rendered. A first show after launch produced
 only 10–13 motion frames over ~200 ms; episodes with fewer new rows produced 21–22.
 
-Fix: the row body only reads an `NSCache` (`HistoryThumbnail.cachedImage(for:)`,
+Change in 1.0.17: the row body only reads an `NSCache` (`HistoryThumbnail.cachedImage(for:)`,
 no I/O). Decoding runs in `Task.detached(priority: .utility)` behind a per-item
 `DecodeRegistry`, so a row that scrolls in and out does not start duplicate
 decodes. `AppDelegate.showPanel` calls `HistoryThumbnail.prewarm` for the first
@@ -164,7 +172,8 @@ placeholder and swaps in when the decode completes. Tests are async and call
 `loadImage(for:)` before reading the cache. With this in place, a clean first
 show after launch measured 22 frames / 175 ms with no gaps, and four
 non-overlapping cycles measured 21, 21, 22 and 22 appearance frames (dismissals
-15 frames).
+15 frames). Those numbers only prove fewer missed vsyncs; they do not establish
+that the panel looks smooth to the user.
 
 Two motion changes landed with it. Per-frame opacity is gone — the window and
 hosting view stay at alpha 1, so the glass is not recomposited every tick (the
@@ -186,18 +195,84 @@ the row.
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable
-Core Animation actions for this corrective translation; keep the window's explicit frame
-animation and content fade. Do not replace real window resizing with scaling or lengthen
-the animation to hide the defect. Shared API details:
-[AppKit resizing and pinned content](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#pinned-content-during-window-resize).
+Core Animation actions for this corrective translation; keep the real window resize (no
+scaling) and the fade that belongs to the reduced-motion path. Do not reintroduce
+per-frame opacity on the normal path. Do not replace real window resizing with scaling or
+lengthen the animation to hide the defect. Shared API details:
+[AppKit resizing and pinned content](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#pinned-content-during-window-resize)
+and [display-link window motion](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#display-link-window-motion-and-main-thread-work).
 
 Regression coverage includes immediate resize without a deferred layout pass, both
 anchor directions, sampling the actual `HistoryPanel.showPanel(placement:)` animation,
 and horizontal edge stability (window + content `minX`) alongside the vertical
 caret-adjacent edge. Review live motion separately from geometry assertions; static
-screenshots cannot prove absence of compositor jitter.
+screenshots cannot prove absence of compositor jitter, and in-process frame counts do
+not override the user's live report.
+
+Test-harness warning: `HistoryPanelMotionTests` exercises the real panel, so running
+`xcodebuild ... test` orders the panel front and can steal focus on every cycle. On
+2026-10-17 repeated full-suite runs interrupted the user's normal computer use; the
+user explicitly asked for the popups to stop. Do not run window-motion tests while
+the user is actively using the Mac; ask first or run only non-UI tests. One
+environment-sensitive failure was observed: `testAnimatedWindowKeepsCaretEdgeAndContentTogether`
+can sample only the 36 pt seed for the whole 240 ms window and fail "Must sample an
+in-flight resize". Hypothesis (unconfirmed): the test host loses key, `resignKey()`
+calls `hidePanel()`, and the hide path cancels the appearance motion at seed height.
+Do not treat that failure as a product regression until visibility/key state and hide
+calls are checked. The test passed 14 consecutive isolated runs after the failure.
 
 ### Validation diagnostics
+
+A production recording on 2026-10-17 captured the installed 1.0.17 (18)
+expanding from NeatEditor on the 2× virtual display. The selected-row top alternated
+between 604 and 606 backing pixels before settling; concurrent WindowServer bounds
+alternated between y=252 and y=253 points. This is rendered movement, not a frame-count
+inference. A silent native `NSPanel.setFrame(_:display:)` probe then reproduced the
+cause: AppKit floors the origin and ceils the size to whole screen points on this
+macOS 27.2 system. With a fixed requested top edge of 1043.5 pt, integer and half-point
+heights alternate the actual top between 1043 and 1044 pt. The earlier layout probe
+used an integer top edge and therefore missed this case.
+
+Repair: retain the existing panel, content pin, display-link clock and real resize.
+Align window geometry to whole screen points before deriving the seed and each
+anchored interpolation; Retina backing-pixel alignment alone is insufficient for
+these native window bounds. Preserve the current curve, duration, content size and
+focus/dismissal behavior. Validate the repaired artifact using an actual NeatEditor
+expansion recording and rendered row/top-edge positions; native frame readback is
+additional evidence, not a substitute. The implementation and 82 non-presenting Debug tests pass, including native
+window quantization regression coverage for fractional anchors in both directions.
+Release compilation passed for arm64 and x86_64, and static analysis passed. The
+existing App Intents metadata warning is retained as assessed below. Visual
+acceptance remains pending; no public release is authorized.
+
+Silent layout probe (2026-10-17, installed 1.0.17 (18) unchanged): an independent
+CLI reused the current `PinnedContentHost`, `PanelGlassView` and `PanelSearchField`
+source with a synthetic fixed-size SwiftUI search/list layout. It never ordered
+the panel in or made it key. Across both pin directions and ten heights per
+direction (including 36, 84.5, 156, 190.5, 320.5, 384 and 432 pt), the search
+region, native text field and first-row marker each retained one screen-coordinate
+rectangle, both immediately after layout and after a run-loop turn (40 samples).
+The probe compiled under Swift 6 complete concurrency with no diagnostics; its
+runtime diagnostic stream was empty. This does not reproduce production data,
+key/focus changes, scroll-to-selection callbacks, live display-link timing or the
+WindowServer compositor, and cannot clear the reported symptom.
+
+Initially, the execution host reported `CGPreflightScreenCaptureAccess() == false`
+and `AXIsProcessTrusted() == false`; region capture failed and video produced no
+file. After the owner unlocked the session and the current `tmux` screen-recording
+entry was enabled through System Settings, capture preflight returned true. An
+actual BetterDisplay virtual-screen image and two-second video were inspected.
+A targeted NeatEditor shortcut attempt did not expose the history panel; the
+recording did not contain the required expansion, so it provides no motion
+acceptance evidence. See the shared
+[closed-lid capture notes](~/.config/agentsync/docs/MAC_KNOWLEDGE_BASE.md#closed-lid-screen-capture-2026-10-17)
+for setup outcomes and the remaining closed-lid verification limit.
+Do not open repeated test panels without a working way to capture their rendered
+motion. The next evidence must distinguish internal content movement from glass,
+shadow or window-surface movement in the actual NeatEditor interaction; no new
+animation parameter change is justified by this probe. Modern screen-flush API
+limitations are covered in the shared
+[display-link motion notes](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#display-link-window-motion-and-main-thread-work).
 
 - Animation completion callbacks now enter the existing main-actor bridge before checking
   the generation and changing panel state; no cross-actor warning is retained.

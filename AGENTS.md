@@ -46,7 +46,7 @@ Remote：`app-macos` -> GitHub `NeatMacApps/NeatPaste`（公开，https://github
 
 - [app-macos/AGENTS.md](~/Codes/NeatPaste/app-macos/AGENTS.md)：改、评审或排查 macOS 客户端工程、面板、预览窗、热键、菜单栏、去重、光标锚点、收录探测或覆盖安装前**必读**。不读会把面板做成抢焦点、用错菜单栏实现，把预览限尺寸拿掉，漏收刚复制的内容，或覆盖安装把签名装坏。
 - [app-macos/docs/PRODUCT_CONTRACT.md](~/Codes/NeatPaste/app-macos/docs/PRODUCT_CONTRACT.md)：改、评审或排查任何用户可见行为、历史保留、粘贴、收录探测、预览、去重、面板位置、列表右键删除、隐藏菜单栏图标、恢复窗口、开机自启三态与「明确不做」的范围前**必读**。不读会把已钉死的体验改掉，把历史浮层当成恢复面，或把后续不做的能力做进去。
-- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](~/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、挡住输入行、没有和光标齐左、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边或窗口边缘玻璃前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，把面板居中盖住已输入文字，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，或把外框做成雾面块。
+- [app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md](~/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-history-panel-preview-and-anchor.md)：改、评审或排查系统预览尺寸、换条闪动/变大、面板是否跟随输入位置、挡住输入行、没有和光标齐左、历史重复条目、点外面关不掉、重启后历史丢失、按住上下键只动一格、列表滚动条、搜索框描边、窗口边缘玻璃、展开时上下抖动或逐帧卡顿前**必读**。不读会再拿掉限尺寸，把整页编辑器底边当成光标，把面板居中盖住已输入文字，让面板一直挡屏幕，把 7 天历史做成重启即丢，按住方向键只跳一条，接鼠标后仍画出滚动条，给搜索单独加粗框，把外框做成雾面块，或在抖动未验收时又用帧计数宣称已修。
 - [app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md](~/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-08-15-clipboard-ingest-retry.md)：改、评审或排查「复制了但列表没有」、收录探测、写回同时带文字和文件、或本机冒烟验收收录前**必读**。不读会把内容还没装上当成已经处理完，这条就永远进不了列表。
 - [app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md](~/Codes/NeatPaste/app-macos/docs/troubleshooting/2026-09-05-history-memory-footprint.md)：改、评审或排查活动监视器内存偏高、历史文件很大、复制截图后占用暴涨，或打算压历史内存前**必读**。不读会把整包常驻误判成泄漏，或为了省内存改成只留纯文本、拿掉重启后仍在的持久化。
 - [../_standards/swift.md](~/Codes/_standards/swift.md)：新建、评审或改造本 macOS 应用前**必读**。不读会偏离开源 Mac 应用的签名、本地化、无蓝框和覆盖安装闭环。
@@ -123,6 +123,8 @@ xcodebuild -project NeatPaste.xcodeproj -scheme NeatPaste -configuration Debug \
 xcodebuild -project NeatPaste.xcodeproj -scheme NeatPaste -configuration Debug \
   -destination 'platform=macOS' -derivedDataPath build/DerivedData test
 ```
+
+运行 `test` 会真实出示历史面板（窗口动画测试），可能反复抢焦点；用户正在用电脑时不要跑整套测试，先问或只跑非窗口用例。`HistoryPanelMotionTests` 偶发整段只采样到 36pt 初始高度并报 “Must sample an in-flight resize”：先查测试宿主是否失 key 触发 `resignKey()` → `hidePanel()` 取消了展开动画，不要先当成产品回归。
 
 对外发版（签名公证 dmg + Sparkle 更新包 + GitHub Release + appcast，一条命令、可重复执行；`--local-only` 只产本地公证包不碰远端）：
 

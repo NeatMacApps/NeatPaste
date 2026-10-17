@@ -32,6 +32,43 @@ final class HistoryPanelDismissTests: XCTestCase {
 
 final class HistoryPanelMotionTests: XCTestCase {
     @MainActor
+    func testFractionalPlacementKeepsNativeWindowEdgePinnedWithoutPresentation() {
+        let window = NSPanel(
+            contentRect: .zero, styleMask: [.nonactivatingPanel, .fullSizeContentView],
+            backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.minSize = NSSize(width: 8, height: 8)
+        window.maxSize = NSSize(width: 10_000, height: 10_000)
+        defer { window.close() }
+
+        // Exercise AppKit's actual setFrame quantization, not just rectangle math.
+        // Half-point caret anchors on a 2× display caused the rendered top to wobble.
+        for fraction in [0.0, 0.25, 0.5, 0.75] {
+            let target = HistoryPanel.windowAlignedRect(NSRect(
+                x: -812 + fraction, y: 611 + fraction, width: 320, height: 432))
+            for top in [true, false] {
+                let seed = NSRect(
+                    x: target.minX, y: top ? target.maxY - 36 : target.minY,
+                    width: 36, height: 36)
+                for (from, to) in [(seed, target), (target, seed)] {
+                    for step in 0...100 {
+                        let requested = HistoryPanel.interpolatedMotionFrame(
+                            from: from, to: to, pinsToTop: top,
+                            progress: Double(step) / 100)
+                        window.setFrame(requested, display: false)
+                        XCTAssertEqual(window.frame, requested)
+                        XCTAssertEqual(window.frame.minX, target.minX)
+                        XCTAssertEqual(
+                            top ? window.frame.maxY : window.frame.minY,
+                            top ? target.maxY : target.minY)
+                    }
+                }
+            }
+        }
+        XCTAssertFalse(window.isVisible)
+    }
+
+    @MainActor
     func testAnimatedWindowKeepsCaretEdgeAndContentTogether() async throws {
         let model = HistoryPanelModel(history: InMemoryHistoryStore(records: InMemoryHistoryStore.fixtureItems()))
         await model.reload()
