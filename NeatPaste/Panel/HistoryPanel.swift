@@ -127,6 +127,14 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         }
     }
 
+    /// Settles list content while still ordered out, so reload churn (row
+    /// insertion, scroll reset, thumbnail decode) lands invisibly before the
+    /// first visible animation frame instead of swimming inside the growing glass.
+    func prepareForShow() {
+        contentPin?.needsLayout = true
+        contentPin?.layoutSubtreeIfNeeded()
+    }
+
     func showPanel(placement: PanelAnchor.Placement) {
         clickThroughEater?.cancel()
         clickThroughEater = nil

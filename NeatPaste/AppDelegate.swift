@@ -149,6 +149,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             if keepPrompt {
                 panelModel.needsAccessibilityPrompt = true
             }
+            // Land reload churn while still ordered out: pre-layout realizes rows
+            // (thumbnail decode included), then two runloop turns flush render and
+            // the scroll reset. Only then start the visible expansion.
+            panel.prepareForShow()
+            try? await Task.sleep(for: .milliseconds(8))
+            try? await Task.sleep(for: .milliseconds(8))
             panel.showPanel(placement: placement)
         }
     }

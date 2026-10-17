@@ -99,8 +99,13 @@ with `allowsImplicitAnimation = false` set explicitly. Real window resize is pre
 
 The list also suppresses `ScrollViewReader.scrollTo` while
 `HistoryPanelModel.isMotionActive` is set (instant non-animated scroll otherwise) and
-snaps once when motion ends, so row offsets never swim inside the growing glass. Anomaly-only
-telemetry logs slow motions and dropped vsync ticks; healthy motions stay silent.
+snaps once when motion ends, so row offsets never swim inside the growing glass.
+Reload churn is landed while still ordered out: `HistoryPanel.prepareForShow`
+pre-lays out rows (thumbnail decode included) and `AppDelegate.showPanel` yields two
+runloop turns to flush render plus the scroll reset before the first visible frame,
+which matters most for the copy-then-invoke flow where a new row prepends and the
+selection resets on every show. Anomaly-only telemetry logs slow motions and dropped
+vsync ticks; healthy motions stay silent.
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable
