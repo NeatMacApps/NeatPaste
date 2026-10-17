@@ -9,6 +9,10 @@ final class HistoryPanelModel {
     var visibleItems: [HistoryItem] = []
     var selectedID: HistoryItem.ID?
     var needsAccessibilityPrompt = false
+    /// True while the panel window is animating its frame. The list suppresses
+    /// auto-scroll during this window and snaps once after, so row offsets never
+    /// swim inside the growing glass and read as vertical jitter.
+    var isMotionActive = false
 
     var onHide: (() -> Void)?
     /// 鼠标点选触发粘贴时，先挡住双击收尾那一下，避免点穿到下面的窗口。

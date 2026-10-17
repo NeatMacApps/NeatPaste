@@ -90,9 +90,17 @@ cubic-bezier control points as `PanelMotion`, now shared from one source). Each 
 interpolates width/height plus the fixed edges with a single eased progress, derives
 the origin from the fixed edges (shared edges stay exactly constant), snaps to backing
 pixels, and sets the frame synchronously with all implicit actions disabled. Alpha
-follows the same eased progress. Reduced-motion paths keep their fade-only behavior
+follows the same eased progress. Ticks are paced by the display vsync
+(`NSWindow.displayLink`, common modes); a Task fallback only steps while the link is
+stalled, so a runloop timer never beats against the refresh and reads as judder.
+Reduced-motion paths keep their fade-only behavior
 with `allowsImplicitAnimation = false` set explicitly. Real window resize is preserved
 (no scaling, no bounce, same 0.18/0.12 s pacing).
+
+The list also suppresses `ScrollViewReader.scrollTo` while
+`HistoryPanelModel.isMotionActive` is set (instant non-animated scroll otherwise) and
+snaps once when motion ends, so row offsets never swim inside the growing glass. Anomaly-only
+telemetry logs slow motions and dropped vsync ticks; healthy motions stay silent.
 
 Reuse the existing `HistoryPanel` / `PinnedContentHost` implementation and the public
 `NSView.resizeSubviews(withOldSize:)` callback to position content synchronously. Disable

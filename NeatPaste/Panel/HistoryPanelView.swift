@@ -119,14 +119,31 @@ struct HistoryPanelView: View {
                     // Mac 接鼠标时 `.hidden` 只是建议，系统仍会画出滚动条；契约要求永不显示。
                     .scrollIndicators(.never)
                     .onChange(of: model.selectedID) { _, id in
+                        // 窗口撑开期间不跟滚，避免行位移叠在玻璃生长上被看成抖动；
+                        // 动效结束后的那一次 onChange(isMotionActive) 会补齐。
+                        guard !model.isMotionActive else { return }
                         if let id {
-                            proxy.scrollTo(id, anchor: .center)
+                            scrollToSelection(proxy, id: id)
                         }
+                    }
+                    .onChange(of: model.isMotionActive) { _, active in
+                        guard !active, let id = model.selectedID else { return }
+                        scrollToSelection(proxy, id: id)
                     }
                 }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    /// Instant, non-animated scroll so list offsets never tween alongside the
+    /// growing window (which would read as vertical jitter).
+    private func scrollToSelection(_ proxy: ScrollViewProxy, id: HistoryItem.ID) {
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) {
+            proxy.scrollTo(id, anchor: .center)
+        }
     }
 
     private var accessibilityBanner: some View {

@@ -23,7 +23,26 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     private var currentPlacement: PanelAnchor.Placement?
     private var motionGeneration = 0
     private var isDismissing = false
-    private var motionTask: Task<Void, Never>?
+    // Vsync-locked manual motion state. The window frame is stepped on every
+    // display vsync (CADisplayLink) with a Task fallback that only drives ticks
+    // while the link is stalled (headless tests), so pacing never judders from
+    // a runloop timer beating against the display refresh.
+    private var motionLink: CADisplayLink?
+    private var motionFallbackTask: Task<Void, Never>?
+    private var motionStartTime: CFTimeInterval = 0
+    private var motionFrom = NSRect.zero
+    private var motionTo = NSRect.zero
+    private var motionPinsToTop = true
+    private var motionDuration: TimeInterval = 0
+    private var motionIsAppearing = true
+    private var motionControlPoints = PanelMotion.appearControlPoints
+    private var motionScale: CGFloat = 2
+    private var motionGenerationAtStart = 0
+    private var motionDone = true
+    private var motionCompletion: (@MainActor () -> Void)?
+    private var motionLinkTickCount = 0
+    private var motionLastLinkFire: CFTimeInterval = 0
+    private var motionLastFrameDuration: CFTimeInterval = 1.0 / 60.0
 
     /// Visible and not in the middle of shrinking away. Hotkey toggle uses this.
     var isPresented: Bool { isVisible && !isDismissing }
@@ -310,13 +329,13 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         isDismissing = false
     }
 
-    // MARK: - Anchored manual motion
+    // MARK: - Anchored vsync motion
     //
     // `animator().setFrame` animates a window's origin and size as separate
     // Core Animation properties. Even when the seed and the target share the
     // caret-adjacent edges (left + top for downward, left + bottom for upward),
     // the two tweens interpolate independently with per-frame display rounding,
-    // so `origin + size` wobbles by fractions of a point each frame. That is the
+    // so `origin + size` wobbles by fractions of a point. That is the
     // vertical jitter on downward expansion and the occasional horizontal shimmer.
     // The animator group also enables implicit animations for descendant layers,
     // so SwiftUI/glass layers lag one frame behind the window.
@@ -325,11 +344,20 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     // eased progress value, derives the origin from the fixed edges every tick
     // (so shared edges are exactly constant), snaps to backing pixels, and sets
     // frames synchronously with all implicit actions disabled. Alpha follows the
-    // same eased progress. Real window resize is preserved (no scaling).
+    // same eased progress. Ticks are driven by the display vsync (CADisplayLink);
+    // a Task fallback only steps while the link is stalled, so a runloop timer
+    // never beats against the refresh and reads as judder. Real window resize is
+    // preserved (no scaling).
 
     private func cancelMotionTask() {
-        motionTask?.cancel()
-        motionTask = nil
+        if let motionLink {
+            motionLink.invalidate()
+            self.motionLink = nil
+        }
+        motionFallbackTask?.cancel()
+        motionFallbackTask = nil
+        motionCompletion = nil
+        motionDone = true
     }
 
     private func motionPixelScale() -> CGFloat {
@@ -434,33 +462,107 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             completion()
             return
         }
-        motionTask = Task { @MainActor [weak self] in
+        motionFrom = fromSnapped
+        motionTo = toSnapped
+        motionPinsToTop = pinsToTop
+        motionDuration = duration
+        motionIsAppearing = isAppearing
+        motionControlPoints = controlPoints
+        motionScale = scale
+        motionGenerationAtStart = generation
+        motionDone = false
+        motionCompletion = completion
+        motionLinkTickCount = 0
+        motionLastLinkFire = 0
+        motionLastFrameDuration = 1.0 / 60.0
+        motionStartTime = CACurrentMediaTime()
+        model.isMotionActive = true
+
+        let link = displayLink(target: self, selector: #selector(motionLinkFired(_:)))
+        motionLink = link
+        link.add(to: .main, forMode: .common)
+
+        // Fallback for environments without vsync (headless tests): only steps
+        // while the link has not fired recently, so it never double-drives.
+        motionFallbackTask = Task { @MainActor [weak self] in
             guard let self else { return }
-            let start = CACurrentMediaTime()
             while true {
-                if Task.isCancelled { break }
-                guard generation == self.motionGeneration else { break }
-                let elapsed = CACurrentMediaTime() - start
-                let linear = min(max(elapsed / duration, 0), 1)
-                let eased = Self.easedProgress(
-                    linear,
-                    c1x: controlPoints.x1, c1y: controlPoints.y1,
-                    c2x: controlPoints.x2, c2y: controlPoints.y2)
-                let frame = self.interpolatedMotionFrame(
-                    from: fromSnapped, to: toSnapped,
-                    pinsToTop: pinsToTop, progress: eased, scale: scale)
-                self.applyMotionFrame(frame, alpha: isAppearing ? CGFloat(eased) : CGFloat(1 - eased))
-                if linear >= 1 { break }
                 try? await Task.sleep(for: .milliseconds(8))
+                if Task.isCancelled { break }
+                guard !self.motionDone, generation == self.motionGeneration else { break }
+                let now = CACurrentMediaTime()
+                if now - self.motionLastLinkFire < 0.012 { continue }
+                if self.motionTick(now: now) { break }
             }
-            guard generation == self.motionGeneration, !Task.isCancelled else { return }
-            self.applyMotionFrame(toSnapped, alpha: isAppearing ? 1 : 0)
-            // Break the retain cycle only if no newer motion replaced us.
-            if generation == self.motionGeneration {
-                self.motionTask = nil
-            }
-            completion()
         }
+    }
+
+    @objc private nonisolated func motionLinkFired(_ link: CADisplayLink) {
+        // CADisplayLink is not Sendable: only its timestamps cross into the actor.
+        let timestamp = link.timestamp
+        let frameDuration = link.duration
+        performOnMain { self.motionLinkFiredOnMain(timestamp: timestamp, frameDuration: frameDuration) }
+    }
+
+    private func motionLinkFiredOnMain(timestamp: CFTimeInterval, frameDuration: CFTimeInterval) {
+        guard !motionDone, motionGenerationAtStart == motionGeneration else { return }
+        motionLinkTickCount += 1
+        motionLastLinkFire = timestamp
+        if frameDuration > 0 {
+            motionLastFrameDuration = frameDuration
+        }
+        _ = motionTick(now: timestamp)
+    }
+
+    /// Applies one eased frame. Returns true when the motion reached its end.
+    @discardableResult
+    private func motionTick(now: CFTimeInterval) -> Bool {
+        guard !motionDone, motionGenerationAtStart == motionGeneration else { return true }
+        let linear = min(max((now - motionStartTime) / motionDuration, 0), 1)
+        let eased = Self.easedProgress(
+            linear,
+            c1x: motionControlPoints.x1, c1y: motionControlPoints.y1,
+            c2x: motionControlPoints.x2, c2y: motionControlPoints.y2)
+        let frame = interpolatedMotionFrame(
+            from: motionFrom, to: motionTo,
+            pinsToTop: motionPinsToTop, progress: eased, scale: motionScale)
+        applyMotionFrame(frame, alpha: motionIsAppearing ? CGFloat(eased) : CGFloat(1 - eased))
+        if linear >= 1 {
+            finalizeMotion(now: now)
+            return true
+        }
+        return false
+    }
+
+    private func finalizeMotion(now: CFTimeInterval) {
+        guard !motionDone, motionGenerationAtStart == motionGeneration else { return }
+        motionDone = true
+        if let motionLink {
+            motionLink.invalidate()
+            self.motionLink = nil
+        }
+        motionFallbackTask?.cancel()
+        motionFallbackTask = nil
+        applyMotionFrame(motionTo, alpha: motionIsAppearing ? 1 : 0)
+        model.isMotionActive = false
+        // Anomaly-only telemetry: silent when pacing is healthy.
+        let elapsed = now - motionStartTime
+        if elapsed > motionDuration + 0.15 {
+            NSLog(
+                "[NeatPaste] panel motion slow: %.3fs wall vs %.3fs planned, %d vsync ticks",
+                elapsed, motionDuration, CInt(motionLinkTickCount))
+        } else if motionLinkTickCount > 0 {
+            let expected = motionDuration / motionLastFrameDuration
+            if Double(motionLinkTickCount) < expected * 0.5 {
+                NSLog(
+                    "[NeatPaste] panel motion dropped frames: %d vsync ticks vs %.0f expected (%.3fs)",
+                    CInt(motionLinkTickCount), expected, motionDuration)
+            }
+        }
+        guard let completion = motionCompletion else { return }
+        motionCompletion = nil
+        // Break any retain cycle only if no newer motion replaced us.
+        completion()
     }
 
     nonisolated override func acceptsPreviewPanelControl(_ panel: QLPreviewPanel!) -> Bool {
