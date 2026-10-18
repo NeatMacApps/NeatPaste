@@ -667,42 +667,6 @@
         }
       }
     },
-    "settings.ignoredApps.footnote": {
-      "comment": "Ignored apps coming soon",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Copies from listed apps will be ignored. Adding apps arrives in the next update; the setting is already saved in one place."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "来自这些应用的复制会被忽略。添加应用会在下一波接入；设置键已经集中存放。"
-          }
-        }
-      }
-    },
-    "settings.ignoredApps.section": {
-      "comment": "Ignored apps section",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Ignored Apps"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "忽略的应用"
-          }
-        }
-      }
-    },
     "settings.launchAtLogin.failed": {
       "comment": "Launch at login update failed",
       "extractionState": "manual",
@@ -793,24 +757,6 @@
         }
       }
     },
-    "settings.menuBarIcon.section": {
-      "comment": "Menu bar icon section",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Menu Bar"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "菜单栏"
-          }
-        }
-      }
-    },
     "settings.menuBarIcon.toggle": {
       "comment": "Show menu bar icon toggle",
       "extractionState": "manual",
@@ -825,24 +771,6 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示菜单栏图标"
-          }
-        }
-      }
-    },
-    "settings.actions.section": {
-      "comment": "Settings actions matching status menu parity",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Actions"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "操作"
           }
         }
       }
@@ -883,24 +811,6 @@
         }
       }
     },
-    "settings.version.label": {
-      "comment": "Settings footer version, filled with the bundle version at runtime",
-      "extractionState": "manual",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Version"
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "版本"
-          }
-        }
-      }
-    },
     "settings.tabs.general": {
       "comment": "Settings tab title",
       "extractionState": "manual",
@@ -937,20 +847,138 @@
         }
       }
     },
-    "settings.tabs.more": {
-      "comment": "Settings tab title",
+    "settings.history": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "More"
+            "value": "Clipboard History"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "更多"
+            "value": "剪贴板历史"
+          }
+        }
+      }
+    },
+    "settings.hotkey.actions": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Shortcut Options"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "快捷键选项"
+          }
+        }
+      }
+    },
+    "settings.ignoredApps.add": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add Apps…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加应用…"
+          }
+        }
+      }
+    },
+    "settings.ignoredApps.remove": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "移除"
+          }
+        }
+      }
+    },
+    "settings.ignoredApps.help": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Copies from these apps won’t be saved to history."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "这些应用复制的内容不会保存到历史记录。"
+          }
+        }
+      }
+    },
+    "settings.ignoredApps.invalid": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This application has no bundle identifier."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "此应用没有有效的应用标识。"
+          }
+        }
+      }
+    },
+    "settings.ignoredApps.choose": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Add"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "添加"
+          }
+        }
+      }
+    },
+    "settings.ok": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OK"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "好"
           }
         }
       }

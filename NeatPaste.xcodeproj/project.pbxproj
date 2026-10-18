@@ -37,6 +37,7 @@
 		5DC6FA38B8AB219B9422D34C /* ClipboardMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57DC696D3C4DEEBD625910EB /* ClipboardMonitor.swift */; };
 		5EC21D90682E5017220CBBE0 /* QuickLookPreviewFileTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0148060EA3020A7D9178A2D2 /* QuickLookPreviewFileTests.swift */; };
 		61FD68B3452914EDA2207435 /* HistoryDragProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD64A61E7B85546ED60B8C43 /* HistoryDragProvider.swift */; };
+		673D6675E352385A30D9B1EB /* IgnoredApplicationsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1B618134A16596DD7070AD8 /* IgnoredApplicationsTests.swift */; };
 		677F5A027B5373A219A8BCD2 /* HistoryItemClickTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67DCD9337C75045E02C0238F /* HistoryItemClickTests.swift */; };
 		7688C99A90E29E690977DAFF /* MenuBarRecoveryPolicyTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D22DAB59051FA90B0FFFF17 /* MenuBarRecoveryPolicyTests.swift */; };
 		85153C8C287365FFA0CC651F /* AutofillHeuristicGuardTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 054C179736090A16500A94A3 /* AutofillHeuristicGuardTests.swift */; };
@@ -151,6 +152,7 @@
 		CA1CFF505453729F60934085 /* PanelAnchorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelAnchorTests.swift; sourceTree = "<group>"; };
 		CBBD927DF027FA3C5B43D6F5 /* PasteboardCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardCaptureTests.swift; sourceTree = "<group>"; };
 		CBDCBE21320DFE75C2893461 /* LICENSE */ = {isa = PBXFileReference; path = LICENSE; sourceTree = "<group>"; };
+		D1B618134A16596DD7070AD8 /* IgnoredApplicationsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IgnoredApplicationsTests.swift; sourceTree = "<group>"; };
 		DD64A61E7B85546ED60B8C43 /* HistoryDragProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryDragProvider.swift; sourceTree = "<group>"; };
 		DFBC0E853F35A5258D71BB73 /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		E0802C15C237A5802B21C8F7 /* HotkeyDefaultTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyDefaultTests.swift; sourceTree = "<group>"; };
@@ -263,6 +265,7 @@
 				884C3CDC4FAE1AC90A986D64 /* HistoryTextTests.swift */,
 				18772CD6B1C8E90F1AE75784 /* HistoryThumbnailTests.swift */,
 				E0802C15C237A5802B21C8F7 /* HotkeyDefaultTests.swift */,
+				D1B618134A16596DD7070AD8 /* IgnoredApplicationsTests.swift */,
 				6D22DAB59051FA90B0FFFF17 /* MenuBarRecoveryPolicyTests.swift */,
 				CA1CFF505453729F60934085 /* PanelAnchorTests.swift */,
 				CBBD927DF027FA3C5B43D6F5 /* PasteboardCaptureTests.swift */,
@@ -533,6 +536,7 @@
 				0891E9E11C3B2710ABFA6BF3 /* HistoryTextTests.swift in Sources */,
 				2CD416BDB7038B0F80495AE9 /* HistoryThumbnailTests.swift in Sources */,
 				3A75249813CF351947C5A80A /* HotkeyDefaultTests.swift in Sources */,
+				673D6675E352385A30D9B1EB /* IgnoredApplicationsTests.swift in Sources */,
 				7688C99A90E29E690977DAFF /* MenuBarRecoveryPolicyTests.swift in Sources */,
 				59E120AA52BD1703B62AADD6 /* PanelAnchorTests.swift in Sources */,
 				F08934DA24F2A1541E2B402C /* PasteEngineWriteTests.swift in Sources */,
@@ -636,7 +640,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = NO;
@@ -657,7 +661,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.17;
+				MARKETING_VERSION = 1.0.18;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -713,7 +717,7 @@
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 18;
+				CURRENT_PROJECT_VERSION = 19;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = SHZQ3MWP3B;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -728,7 +732,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 1.0.17;
+				MARKETING_VERSION = 1.0.18;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				OTHER_CODE_SIGN_FLAGS = "--timestamp";

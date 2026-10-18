@@ -16,10 +16,14 @@ final class AppPreferences {
         static let ignoredAppBundleIDs = "ignore.bundleIDs"
         static let hotkeyDefaultGeneration = "hotkey.defaultGeneration"
         static let menuBarIconVisible = "menuBar.iconVisible"
+        static let selectedSettingsPane = "settings.selectedPane"
     }
 
     /// 菜单栏图标出厂默认显示。
     nonisolated static let menuBarIconVisibleDefault = true
+    nonisolated static let selectedSettingsPaneDefault = "general"
+
+    private let defaults: UserDefaults
 
     /// 出厂默认快捷键代数。从 1（⌘⇧V）升到 2（⌘⌥V）时，只覆盖仍停在旧出厂值的安装，不覆盖用户改过的组合。
     nonisolated static let currentHotkeyDefaultGeneration = 2
@@ -38,30 +42,41 @@ final class AppPreferences {
     nonisolated static let quickLookMinSize = NSSize(width: 320, height: 240)
     nonisolated static let quickLookMaxSize = NSSize(width: 560, height: 420)
 
-    var ignoredAppBundleIDs: [String] {
+    private(set) var ignoredAppBundleIDs: [String] {
         didSet {
-            UserDefaults.standard.set(ignoredAppBundleIDs, forKey: Key.ignoredAppBundleIDs)
+            defaults.set(ignoredAppBundleIDs, forKey: Key.ignoredAppBundleIDs)
         }
     }
 
     /// 菜单栏图标是否显示。缺省为显示；用键是否存在判断，避免把空当成关。
     var isMenuBarIconVisible: Bool {
         didSet {
-            UserDefaults.standard.set(isMenuBarIconVisible, forKey: Key.menuBarIconVisible)
+            defaults.set(isMenuBarIconVisible, forKey: Key.menuBarIconVisible)
         }
     }
 
-    private init() {
-        ignoredAppBundleIDs = UserDefaults.standard.stringArray(forKey: Key.ignoredAppBundleIDs) ?? []
-        UserDefaults.standard.register(defaults: [
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        ignoredAppBundleIDs = defaults.stringArray(forKey: Key.ignoredAppBundleIDs) ?? []
+        defaults.register(defaults: [
             Key.hotkeyEnabled: true,
             Key.menuBarIconVisible: Self.menuBarIconVisibleDefault
         ])
-        if UserDefaults.standard.object(forKey: Key.menuBarIconVisible) == nil {
+        if defaults.object(forKey: Key.menuBarIconVisible) == nil {
             isMenuBarIconVisible = Self.menuBarIconVisibleDefault
         } else {
-            isMenuBarIconVisible = UserDefaults.standard.bool(forKey: Key.menuBarIconVisible)
+            isMenuBarIconVisible = defaults.bool(forKey: Key.menuBarIconVisible)
         }
+    }
+
+    func addIgnoredApplication(bundleID: String) {
+        let identifier = bundleID.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !identifier.isEmpty, !ignoredAppBundleIDs.contains(identifier) else { return }
+        ignoredAppBundleIDs.append(identifier)
+    }
+
+    func removeIgnoredApplication(bundleID: String) {
+        ignoredAppBundleIDs.removeAll { $0 == bundleID }
     }
 
     /// 显隐菜单栏图标。点隐藏时静默，不弹恢复窗；再次打开应用或「打开主窗口」才出示。
@@ -71,36 +86,36 @@ final class AppPreferences {
     }
 
     func saveHotkey(keyCode: UInt32, modifiers: UInt32) {
-        UserDefaults.standard.set(Int(keyCode), forKey: Key.hotkeyKeyCode)
-        UserDefaults.standard.set(Int(modifiers), forKey: Key.hotkeyModifiers)
-        UserDefaults.standard.set(true, forKey: Key.hotkeyEnabled)
+        defaults.set(Int(keyCode), forKey: Key.hotkeyKeyCode)
+        defaults.set(Int(modifiers), forKey: Key.hotkeyModifiers)
+        defaults.set(true, forKey: Key.hotkeyEnabled)
     }
 
     func clearHotkey() {
-        UserDefaults.standard.set(false, forKey: Key.hotkeyEnabled)
+        defaults.set(false, forKey: Key.hotkeyEnabled)
     }
 
     func isHotkeyEnabled() -> Bool {
-        if UserDefaults.standard.object(forKey: Key.hotkeyEnabled) == nil {
+        if defaults.object(forKey: Key.hotkeyEnabled) == nil {
             return true
         }
-        return UserDefaults.standard.bool(forKey: Key.hotkeyEnabled)
+        return defaults.bool(forKey: Key.hotkeyEnabled)
     }
 
     func storedHotkey() -> (keyCode: UInt32, modifiers: UInt32)? {
         guard isHotkeyEnabled() else { return nil }
-        guard UserDefaults.standard.object(forKey: Key.hotkeyKeyCode) != nil else { return nil }
+        guard defaults.object(forKey: Key.hotkeyKeyCode) != nil else { return nil }
         return (
-            UInt32(UserDefaults.standard.integer(forKey: Key.hotkeyKeyCode)),
-            UInt32(UserDefaults.standard.integer(forKey: Key.hotkeyModifiers))
+            UInt32(defaults.integer(forKey: Key.hotkeyKeyCode)),
+            UInt32(defaults.integer(forKey: Key.hotkeyModifiers))
         )
     }
 
     func hotkeyDefaultGeneration() -> Int {
-        UserDefaults.standard.integer(forKey: Key.hotkeyDefaultGeneration)
+        defaults.integer(forKey: Key.hotkeyDefaultGeneration)
     }
 
     func markHotkeyDefaultGeneration(_ value: Int) {
-        UserDefaults.standard.set(value, forKey: Key.hotkeyDefaultGeneration)
+        defaults.set(value, forKey: Key.hotkeyDefaultGeneration)
     }
 }

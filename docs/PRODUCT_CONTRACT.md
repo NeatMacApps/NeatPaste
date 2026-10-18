@@ -40,6 +40,14 @@ NeatPaste 是 macOS 26+ 的菜单栏剪贴板历史工具。复制之后可以�
 | 上下键 | 点一下移动一条；**按住不放按系统连发速度连续移动**，预览开着同样如此，不要只动一格 |
 | 快捷键默认值 | ⌘⌥V，可在设置里改 |
 
+## Settings and ignored applications
+
+Use one SwiftUI `Settings` scene with two native icon-and-label toolbar tabs: General and Ignored Apps. Restore the last selected pane. Each pane uses a native grouped `Form`, measures its content, and stays within a 480-point width without scrolling ordinary settings. General groups the existing shortcut recorder and Open Panel action, login and menu-bar switches, and the app icon/name/version with About, Check for Updates and Quit. Hidden-icon recovery stays in this same window. Keep the existing shortcut recording behavior and native buttons; remove the empty More pane and placeholder-only ignored-app view.
+
+Owner decision, 2026-10-18: Ignored Apps supports adding applications through the native application-file picker and removing them immediately. Store stable bundle identifiers through `AppPreferences` using the existing ignore key, reject duplicates, show application icons and readable names, and retain the list across launches. The existing capture decision skips matching source applications before reading clipboard payloads. Removing an app permits its next copy to be collected; it does not import an earlier skipped copy. Adding an app does not remove existing history. Capture attributes a change to the frontmost application observed at poll time; clipboard content written in the background or a source switch before polling cannot be attributed with certainty. Verify filtering and persistence, not merely a successful list edit. Lists may scroll once user-added entries exceed the pane's bounded height.
+
+API/reference record: inspected NeatWebApp's Settings-scene `Tab`, measured grouped-form sizing, scene-injected presenter and about row, and Alongside's application-file picker/list behavior. Reuse their applicable layout and routing; replace the blocking picker with a native sheet, validate bundle identifiers, and do not copy Alongside's fallback that treats a file name as an identifier. [SwiftUI Settings](https://developer.apple.com/documentation/swiftui/settings), [NSOpenPanel sheet presentation](https://developer.apple.com/documentation/appkit/nssavepanel/beginsheetmodal(for:completionhandler:)) and [UTType.applicationBundle](https://developer.apple.com/documentation/uniformtypeidentifiers/uttype-swift.struct/applicationbundle) are present in the installed Xcode 27.2 SDK and cover the macOS 26 deployment target. Window observation uses the public `NSView.viewDidMoveToWindow` and `NSWindow` notifications without replacing SwiftUI's delegate or controls. This revision adds no alternate recovery window.
+
 During expansion, keep the caret-adjacent edge and content stable without vertical jitter, especially when growing downward from the top edge. Window resizing and content positioning must stay synchronized.
 
 ## 明确不做

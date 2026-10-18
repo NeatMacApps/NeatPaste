@@ -70,7 +70,7 @@ notarize_and_wait() {
       history_json="$(xcrun notarytool history --key "${NOTARY_KEY}" --key-id "${NOTARY_KEY_ID}" \
         --issuer "${NOTARY_ISSUER}" --output-format json 2>/dev/null)" || continue
       submission_id="$(jq -r --arg name "${basename_file}" --arg since "${started_at}" \
-        '[.history[]? | select(.name==$name and .createdDate>=$s)] | sort_by(.createdDate) | last | .id // empty' \
+        '[.history[]? | select(.name==$name and .createdDate>=$since)] | sort_by(.createdDate) | last | .id // empty' \
         <<<"${history_json}" 2>/dev/null || true)"
       [[ -n "${submission_id}" ]] && break
     done
@@ -166,7 +166,7 @@ log_step "生成 Xcode 工程并做 Release 归档"
 xcodegen generate
 git add -A -- . ':!logs/**' ':!.build-menubar-fix/**'
 if ! git diff --cached --quiet; then
-  git commit -m "fix: stabilize downward panel expansion (${tag})"
+  git commit -m "chore: prepare ${tag}"
 fi
 xcodebuild -project ${APP_NAME}.xcodeproj -scheme ${APP_NAME} -configuration Release \
   -destination 'generic/platform=macOS' -derivedDataPath build/DerivedData \
@@ -246,13 +246,15 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- Fix vertical jitter while the history panel expands by keeping its content aligned with every window resize.
-- Preserve the fast glass expansion from the caret and the shorter closing animation.
+- Refine Settings into two native toolbar tabs with aligned grouped controls and a compact app information row.
+- Add working application exclusions: choose apps, remove them, and keep the list across launches. Copies from ignored foreground apps are skipped.
+- Include the current panel motion improvements: a single animation clock, stable fractional caret anchors, and background thumbnail decoding.
 
 简体中文
 
-- 修复历史面板展开时的上下抖动，使内容定位与窗口缩放同步。
-- 保留从光标撑开的快速玻璃动效，以及更快的收起动画。
+- 将设置整理为两个原生工具栏页签，使用对齐的分组控件和紧凑的应用信息行。
+- 补齐忽略应用：支持选择、移除并记住名单，跳过这些前台应用复制的内容。
+- 包含当前面板动效改进：统一动画时钟、稳定非整数光标锚点，并在后台解码缩略图。
 EOF
 
 appcast_dir="${work_dir}/appcast"

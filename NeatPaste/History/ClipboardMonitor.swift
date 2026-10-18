@@ -5,18 +5,29 @@ import Foundation
 @MainActor
 final class ClipboardMonitor {
     private let history: any HistoryServing
+    private let pasteboard: NSPasteboard
+    private let preferences: AppPreferences
+    private let sourceApplication: () -> String?
     private var timer: Timer?
     private var lastChangeCount: Int = 0
     private var ownWriteChangeCount: Int?
     /// 防止定时器与打开面板同时 poll 时，在 await ingest 间隙重入导致同一变化双收录。
     private var isPolling = false
 
-    init(history: any HistoryServing) {
+    init(
+        history: any HistoryServing,
+        pasteboard: NSPasteboard = .general,
+        preferences: AppPreferences = .shared,
+        sourceApplication: @escaping () -> String? = { NSWorkspace.shared.frontmostApplication?.bundleIdentifier }
+    ) {
         self.history = history
+        self.pasteboard = pasteboard
+        self.preferences = preferences
+        self.sourceApplication = sourceApplication
     }
 
     func start() {
-        lastChangeCount = NSPasteboard.general.changeCount
+        lastChangeCount = pasteboard.changeCount
         stop()
         let interval = AppPreferences.clipboardPollInterval
         let timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { [weak self] _ in
@@ -48,7 +59,6 @@ final class ClipboardMonitor {
         isPolling = true
         defer { isPolling = false }
 
-        let pasteboard = NSPasteboard.general
         let changeCount = pasteboard.changeCount
         guard changeCount != lastChangeCount else { return }
 
@@ -65,8 +75,8 @@ final class ClipboardMonitor {
             return
         }
 
-        let sourceBundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier
-        let ignoredApps = AppPreferences.shared.ignoredAppBundleIDs
+        let sourceBundleID = sourceApplication()
+        let ignoredApps = preferences.ignoredAppBundleIDs
         let decision = PasteboardCapture.decide(
             types: advertised,
             sourceBundleID: sourceBundleID,

@@ -1,241 +1,261 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct SettingsView: View {
+    @AppStorage(AppPreferences.Key.selectedSettingsPane)
+    private var selectedPane = AppPreferences.selectedSettingsPaneDefault
+
+    var body: some View {
+        TabView(selection: $selectedPane) {
+            Tab(String(localized: "settings.tabs.general"), systemImage: "gearshape", value: "general") {
+                GeneralSettingsPane()
+            }
+            Tab(String(localized: "settings.tabs.ignored"), systemImage: "eye.slash", value: "ignored") {
+                IgnoredApplicationsPane()
+            }
+        }
+        .frame(width: 480)
+        .fixedSize(horizontal: false, vertical: true)
+        .focusEffectDisabled()
+        .background(SettingsWindowAttachment().frame(width: 0, height: 0))
+        .onChange(of: selectedPane) { _, _ in HotkeyManager.shared.stopRecording() }
+        .onExitCommand { SettingsWindowController.shared.close() }
+    }
+}
+
+private struct GeneralSettingsPane: View {
     @ObservedObject private var hotkeyManager = HotkeyManager.shared
     @ObservedObject private var launchAtLogin = LaunchAtLoginManager.shared
     @Bindable private var preferences = AppPreferences.shared
 
     var body: some View {
-        TabView {
-            generalTab
-                .tabItem {
-                    Label(String(localized: "settings.tabs.general"), systemImage: "gearshape")
-                }
-            ignoredAppsTab
-                .tabItem {
-                    Label(String(localized: "settings.tabs.ignored"), systemImage: "eye.slash")
-                }
-            moreTab
-                .tabItem {
-                    Label(String(localized: "settings.tabs.more"), systemImage: "ellipsis.circle")
-                }
-        }
-        .padding(20)
-        .frame(width: 460)
-        .background(Color(nsColor: .windowBackgroundColor))
-        .focusEffectDisabled()
-        .onAppear {
-            launchAtLogin.refresh()
-        }
-        .onDisappear {
-            hotkeyManager.stopRecording()
-        }
-    }
-
-    private var generalTab: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        Form {
             if !preferences.isMenuBarIconVisible {
-                runningStatusCard
-            }
-            shortcutCard
-            launchCard
-            menuBarIconCard
-        }
-    }
-
-    private var ignoredAppsTab: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            GroupBox {
-                Text(String(localized: "settings.ignoredApps.empty"))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-    }
-
-    private var moreTab: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // 右键菜单对等入口：藏图标后仍能从设置窗完成这些操作。
-            actionsCard
-            Text(versionFooter)
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
-                .monospacedDigit()
-                .frame(maxWidth: .infinity, alignment: .center)
-        }
-    }
-
-    private var runningStatusCard: some View {
-        GroupBox {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "recovery.running.title"))
-                    .font(.headline)
-                Text(String(localized: "recovery.running.detail"))
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var shortcutCard: some View {
-        GroupBox(label: Label(String(localized: "settings.hotkey.section"), systemImage: "keyboard")) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(hotkeyManager.shortcut?.displayName ?? String(localized: "settings.hotkey.cleared"))
-                    .font(.system(size: 24, weight: .medium, design: .rounded))
-                    .accessibilityLabel(String(localized: "settings.hotkey.current"))
-                    .accessibilityValue(hotkeyManager.shortcut?.displayName ?? String(localized: "settings.hotkey.cleared"))
-                Text(hotkeyManager.isRecording
-                    ? String(localized: "settings.hotkey.recordingHint")
-                    : String(localized: "settings.hotkey.hint"))
-                    .foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-                HStack {
-                    Button(hotkeyManager.isRecording
-                        ? String(localized: "settings.hotkey.recording")
-                        : String(localized: "settings.hotkey.record")) {
-                            hotkeyManager.beginRecording()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .disabled(hotkeyManager.isRecording)
-                        .focusEffectDisabled()
-                    Button(String(localized: "settings.hotkey.clear")) {
-                        hotkeyManager.clearShortcut()
-                    }
-                    .buttonStyle(.bordered)
-                    .focusEffectDisabled()
-                    Button(String(localized: "settings.hotkey.restore")) {
-                        hotkeyManager.restoreSafeDefault()
-                    }
-                    .buttonStyle(.bordered)
-                    .focusEffectDisabled()
+                Section {
+                    Label(String(localized: "recovery.running.title"), systemImage: "info.circle")
+                        .foregroundStyle(.secondary)
+                        .help(String(localized: "recovery.running.detail"))
                 }
+            }
+            Section {
+                shortcutRow
                 if let message = hotkeyManager.lastErrorMessage {
-                    Text(message)
-                        .font(.caption)
-                        .foregroundStyle(.red)
-                        .fixedSize(horizontal: false, vertical: true)
+                    Text(message).foregroundStyle(.red)
+                }
+                LabeledContent(String(localized: "settings.history")) {
+                    Button(String(localized: "menu.openPanel")) {
+                        AppDelegate.shared?.showPanel()
+                    }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var launchCard: some View {
-        GroupBox(label: Label(String(localized: "settings.launchAtLogin.section"), systemImage: "bolt.circle")) {
-            VStack(alignment: .leading, spacing: 8) {
+            Section {
                 Toggle(
-                    String(localized: "settings.launchAtLogin.toggle"),
+                    String(localized: "settings.launchAtLogin.section"),
                     isOn: Binding(
                         get: { launchAtLogin.isEnabled },
                         set: { launchAtLogin.setEnabled($0) }
                     )
                 )
-                .focusEffectDisabled()
                 if launchAtLogin.requiresApproval {
-                    Text(String(localized: "settings.launchAtLogin.needsApproval"))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    Button(String(localized: "settings.launchAtLogin.openSettings")) {
-                        launchAtLogin.openSystemSettings()
+                    LabeledContent {
+                        Button(String(localized: "settings.launchAtLogin.openSettings")) {
+                            launchAtLogin.openSystemSettings()
+                        }
+                    } label: {
+                        Label(String(localized: "settings.launchAtLogin.needsApproval"), systemImage: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
                     }
-                    .focusEffectDisabled()
                 }
-                if let lastErrorMessage = launchAtLogin.lastErrorMessage {
-                    Text(lastErrorMessage)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                if let message = launchAtLogin.lastErrorMessage {
+                    Text(message).foregroundStyle(.red)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-    }
-
-    private var menuBarIconCard: some View {
-        GroupBox(label: Label(String(localized: "settings.menuBarIcon.section"), systemImage: "eye")) {
-            Toggle(
-                String(localized: "settings.menuBarIcon.toggle"),
-                isOn: Binding(
-                    get: { preferences.isMenuBarIconVisible },
-                    set: { preferences.setMenuBarIconVisible($0) }
+                Toggle(
+                    String(localized: "settings.menuBarIcon.toggle"),
+                    isOn: Binding(
+                        get: { preferences.isMenuBarIconVisible },
+                        set: { preferences.setMenuBarIconVisible($0) }
+                    )
                 )
-            )
-            .focusEffectDisabled()
-        }
-    }
-
-    private var actionsCard: some View {
-        GroupBox(label: Label(String(localized: "settings.actions.section"), systemImage: "ellipsis.circle")) {
-            VStack(alignment: .leading, spacing: 2) {
-                Button {
-                    AppDelegate.shared?.showPanel()
-                } label: {
-                    Label(String(localized: "menu.openPanel"), systemImage: "rectangle.stack")
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .buttonStyle(.borderedProminent)
-                .focusEffectDisabled()
-                Divider()
-                    .padding(.vertical, 4)
-                actionRow(
-                    title: String(localized: "menu.checkForUpdates"),
-                    systemImage: "arrow.triangle.2.circlepath"
-                ) {
-                    AppDelegate.shared?.checkForUpdates()
-                }
-                Divider()
-                actionRow(
-                    title: String(localized: "menu.about"),
-                    systemImage: "info.circle"
-                ) {
-                    NSApp.activate(ignoringOtherApps: true)
-                    NSApp.orderFrontStandardAboutPanel(options: [
-                        .applicationName: "NeatPaste",
-                        .credits: NSAttributedString(string: String(localized: "about.credits"))
-                    ])
-                }
-                Divider()
-                actionRow(
-                    title: String(localized: "menu.quit"),
-                    systemImage: "power"
-                ) {
-                    AppDelegate.shared?.requestTermination()
-                }
             }
+            Section { SettingsAboutRow() }
         }
+        .settingsPaneStyle()
+        .onAppear { launchAtLogin.refresh() }
+        .onDisappear { hotkeyManager.stopRecording() }
     }
 
-    private func actionRow(
-        title: String,
-        systemImage: String,
-        action: @escaping () -> Void
-    ) -> some View {
-        Button(action: action) {
+    private var shortcutRow: some View {
+        LabeledContent(String(localized: "settings.hotkey.section")) {
             HStack(spacing: 8) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 14))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 20, alignment: .center)
-                    .accessibilityHidden(true)
-                Text(title)
-                Spacer(minLength: 0)
+                Button {
+                    hotkeyManager.beginRecording()
+                } label: {
+                    Text(hotkeyManager.isRecording
+                        ? String(localized: "settings.hotkey.recording")
+                        : hotkeyManager.shortcut?.displayName ?? String(localized: "settings.hotkey.record"))
+                        .monospacedDigit()
+                }
+                .disabled(hotkeyManager.isRecording)
+                .help(String(localized: hotkeyManager.isRecording
+                    ? "settings.hotkey.recordingHint" : "settings.hotkey.hint"))
+                .accessibilityLabel(String(localized: "settings.hotkey.record"))
+                .accessibilityValue(hotkeyManager.shortcut?.displayName ?? String(localized: "settings.hotkey.cleared"))
+                Menu {
+                    Button(String(localized: "settings.hotkey.clear")) { hotkeyManager.clearShortcut() }
+                    Button(String(localized: "settings.hotkey.restore")) { hotkeyManager.restoreSafeDefault() }
+                } label: {
+                    Label(String(localized: "settings.hotkey.actions"), systemImage: "ellipsis")
+                }
+                .labelStyle(.iconOnly)
+                .menuStyle(.borderlessButton)
+                .fixedSize()
             }
-            .contentShape(Rectangle())
-            .padding(.vertical, 3)
         }
-        .buttonStyle(.borderless)
+    }
+}
+
+private struct SettingsAboutRow: View {
+    var body: some View {
+        HStack(spacing: 10) {
+            Button {
+                NSApp.orderFrontStandardAboutPanel(options: [
+                    .applicationName: "NeatPaste",
+                    .credits: NSAttributedString(string: String(localized: "about.credits"))
+                ])
+            } label: {
+                HStack(spacing: 10) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 32, height: 32)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(verbatim: "NeatPaste").fontWeight(.medium)
+                        Text(verbatim: Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .buttonStyle(.plain)
+            .help(String(localized: "menu.about"))
+            .accessibilityLabel(String(localized: "menu.about"))
+            Spacer(minLength: 12)
+            Button(String(localized: "menu.checkForUpdates")) { AppDelegate.shared?.checkForUpdates() }
+            Button(String(localized: "menu.quit")) { AppDelegate.shared?.requestTermination() }
+        }
+    }
+}
+
+private struct IgnoredApplicationsPane: View {
+    @Bindable private var preferences = AppPreferences.shared
+    @State private var selection: String?
+    @State private var invalidApplication = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            List(preferences.ignoredAppBundleIDs, id: \.self, selection: $selection) { bundleID in
+                IgnoredApplicationRow(bundleID: bundleID)
+                    .help(bundleID)
+            }
+            .overlay {
+                if preferences.ignoredAppBundleIDs.isEmpty {
+                    ContentUnavailableView {
+                        Label(String(localized: "settings.ignoredApps.empty"), systemImage: "eye.slash")
+                    } description: {
+                        Text(String(localized: "settings.ignoredApps.help"))
+                    }
+                    .allowsHitTesting(false)
+                }
+            }
+            .frame(height: min(max(CGFloat(preferences.ignoredAppBundleIDs.count) * 36 + 32, 190), 350))
+            HStack {
+                Button(String(localized: "settings.ignoredApps.add"), action: addApplications)
+                Button(String(localized: "settings.ignoredApps.remove"), role: .destructive) {
+                    if let selection {
+                        preferences.removeIgnoredApplication(bundleID: selection)
+                        self.selection = nil
+                    }
+                }
+                .disabled(selection == nil)
+                Spacer()
+            }
+            if !preferences.ignoredAppBundleIDs.isEmpty {
+                Text(String(localized: "settings.ignoredApps.help"))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .padding(20)
         .focusEffectDisabled()
+        .alert(String(localized: "settings.ignoredApps.invalid"), isPresented: $invalidApplication) {
+            Button(String(localized: "settings.ok"), role: .cancel) {}
+        }
     }
 
-    /// Bundle version, read live so the xcconfig single source stays authoritative.
-    private var versionFooter: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "-"
-        let build = info?["CFBundleVersion"] as? String ?? "-"
-        return "\(String(localized: "settings.version.label")) \(short) (\(build))"
+    private func addApplications() {
+        guard let window = NSApp.keyWindow else { return }
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.applicationBundle]
+        panel.canChooseFiles = true
+        panel.canChooseDirectories = false
+        panel.allowsMultipleSelection = true
+        panel.directoryURL = URL(fileURLWithPath: "/Applications", isDirectory: true)
+        panel.prompt = String(localized: "settings.ignoredApps.choose")
+        panel.beginSheetModal(for: window) { response in
+            guard response == .OK else { return }
+            for url in panel.urls {
+                guard let bundleID = Bundle(url: url)?.bundleIdentifier, !bundleID.isEmpty else {
+                    invalidApplication = true
+                    continue
+                }
+                preferences.addIgnoredApplication(bundleID: bundleID)
+                selection = bundleID
+            }
+        }
+    }
+}
+
+private struct IgnoredApplicationRow: View {
+    let bundleID: String
+
+    var body: some View {
+        let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        HStack(spacing: 8) {
+            if let url {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .accessibilityHidden(true)
+            } else {
+                Image(systemName: "app.dashed")
+                    .frame(width: 24, height: 24)
+                    .foregroundStyle(.secondary)
+                    .accessibilityHidden(true)
+            }
+            Text(verbatim: url.map { FileManager.default.displayName(atPath: $0.path) } ?? bundleID)
+        }
+    }
+}
+
+private extension View {
+    func settingsPaneStyle() -> some View {
+        formStyle(.grouped)
+            .toggleStyle(.switch)
+            .modifier(SettingsContentHeight())
+            .focusEffectDisabled()
+    }
+}
+
+private struct SettingsContentHeight: ViewModifier {
+    @State private var contentHeight: CGFloat?
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentSize.height } action: { _, height in
+                contentHeight = height
+            }
+            .scrollDisabled(true)
+            .frame(height: contentHeight)
     }
 }
