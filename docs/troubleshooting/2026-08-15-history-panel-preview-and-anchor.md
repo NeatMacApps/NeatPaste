@@ -1,6 +1,6 @@
 # 历史面板：预览尺寸、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、搜索与玻璃、点选粘贴、滚动条、展开抖动与帧调度
 
-文档定位：历史面板已证伪路径与必须留下的拦法。覆盖系统预览尺寸/换条闪动、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、滚动条、搜索与玻璃、点选粘贴、展开时的上下抖动与逐帧调度。1.0.17 的帧率缓解未解决抖动；后续整数点坐标修复已进入本机 1.0.18，安装后的动效验收仍待完成。产品行为以 [PRODUCT_CONTRACT.md](../PRODUCT_CONTRACT.md) 为准。
+文档定位：历史面板已证伪路径与必须留下的拦法。覆盖系统预览尺寸/换条闪动、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、滚动条、搜索与玻璃、点选粘贴、展开时的上下抖动与逐帧调度。1.0.17 的帧率缓解未解决抖动；后续整数点坐标修复已进入本机 1.0.18，实体屏向上/向下展开录像验收已通过；范围见 Validation diagnostics。产品行为以 [PRODUCT_CONTRACT.md](../PRODUCT_CONTRACT.md) 为准。
 
 ## 预览必须是系统预览，且必须一直是小窗
 
@@ -225,9 +225,9 @@ calls are checked. The test passed 14 consecutive isolated runs after the failur
 
 Current verification boundary (2026-10-18): the owner requires virtual displays to
 stay disconnected during normal use; a short idle period is not permission to
-connect one. Do not synthesize panel shortcuts, move windows or change focus as a
-substitute. A bounded, observation-only capture helper can wait for an ordinary
-NeatEditor invocation, record its actual expansion once and exit. If none occurs,
+connect one. Without explicit authorization, do not synthesize panel shortcuts,
+move windows or change focus as a substitute. A bounded, observation-only capture
+helper can wait for an ordinary NeatEditor invocation, record its actual expansion once and exit. If none occurs,
 expiry is missing acceptance evidence, not a product pass. Keep the recorded binary
 identity and the complete capture log with the evidence. Installed 1.0.18 (19)
 includes the motion fix; a new installation/version number alone does not clear it.
@@ -260,9 +260,56 @@ expansion recording and rendered row/top-edge positions; native frame readback i
 additional evidence, not a substitute. The implementation and 82 non-presenting Debug tests pass, including native
 window quantization regression coverage for fractional anchors in both directions.
 Release compilation passed for arm64 and x86_64, and static analysis passed. The
-existing App Intents metadata warning is retained as assessed below. Visual
-acceptance remains pending. This motion task has no authorization to publish or
-change the update feed.
+existing App Intents metadata warning is retained as assessed below. Physical-screen
+acceptance for the recorded upward/downward interactions passed as detailed below.
+This motion task has no authorization to publish or change the update feed.
+
+Physical-screen acceptance (2026-10-18, owner explicitly authorized a controlled
+capture): installed 1.0.18 (19), executable SHA-256
+`9b5b7bdeeb843599b01a41e366eca7eb7d71b8ee6588abba8eab9c4559d256a4`,
+with `HistoryPanel.swift` SHA-256
+`d420a829e8ace06a5d643a5654863082cfd7ec15b34ee0c467dd55946ee5c898`.
+The same installed binary was checked before and after recording. This is the
+settings task's installed artifact containing the local motion repair; this task
+did not publish another release.
+
+- Upward expansion on the built-in Retina display: the inspected sequential
+  recording shows the glass revealing content upward without the previous vertical
+  alternation. All 53 WindowServer samples retained `X=1528` and `Y+Height=2270`
+  while the height grew from 36 to 432 pt.
+- Downward expansion on the physical OF27UT Pro display at 2×: all 63 WindowServer
+  samples retained `X=448, Y=158` while height grew from 36 to 432 pt. The decoded
+  movie has 132 frames. In all 62 frames where the selected-row blue region is
+  measurable, its top is exactly crop pixel `y=196`, including the remaining
+  in-flight expansion frames. The sampled pixel columns are `[220,240)`; no 2 px
+  alternation occurred. Both initial expansion and settled contact sheets were
+  inspected, rather than inferring appearance from the number of frames.
+- Captures ended normally, Esc dismissed the panel (`remaining=0`), and the
+  successful downward capture restored the document selection, scrollbar, window
+  position, Settings tab and previous foreground application. No document text or
+  clipboard content was changed. BetterDisplay's Agent Display remained `off`, and
+  no recorder or recurring observation process remained after acceptance.
+
+Local private evidence is under `build/diagnostics/physical-motion/`:
+`document-expansion.mov`, `document-capture.log`, `downward-firstline.mov`,
+`downward-firstline.log`, `rendered-edge-analysis.json` and `manifest.json`.
+These files contain user content, remain ignored and are not release assets.
+The first Settings-page crop and a later crop predicted from stale focus missed
+actual panel motion; neither is counted as acceptance. Before the successful
+downward capture, the existing document's selected range was outside its visible
+viewport (AX caret y=1010 while the window occupied y=100…732). The helper saved
+selection/scroll state, selected the first position and scrolled to the top, then
+verified focus and the predicted rectangle before recording; it restored that
+state afterward. This is a capture precondition, not a product change. The shared
+[native-window acceptance notes](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#fractional-fixed-edges-and-native-window-quantization)
+retain the reusable focus, viewport and crop validation checks.
+
+Scope: these two real NeatEditor interactions passed on the current installed
+artifact. They supplement the hidden native-window fractional-anchor regression
+in both directions; they do not establish exhaustive behavior at every caret
+position, refresh rate or closed-lid setup. The previously reported 1.0.17 failure
+and its measurements remain valid evidence; higher frame counts alone still do
+not establish a repair.
 
 Silent layout probe (2026-10-17, installed 1.0.17 (18) unchanged): an independent
 CLI reused the current `PinnedContentHost`, `PanelGlassView` and `PanelSearchField`
