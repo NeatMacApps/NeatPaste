@@ -231,6 +231,9 @@ NeatEditor invocation, record its actual expansion once and exit. If none occurs
 expiry is missing acceptance evidence, not a product pass. Keep the recorded binary
 identity and the complete capture log with the evidence. Installed 1.0.18 (19)
 includes the motion fix; a new installation/version number alone does not clear it.
+The 600-second observation-only attempt ended with `recorded: false`; its process
+exited and no motion file was created. No recurring capture job remains. This is
+missing user-path evidence, not a failing product assertion or a successful fix.
 
 The earlier non-exclusive Carbon registration probe returned `noErr`; it did not
 prove NeatPaste's hotkey registration was missing. Apple's installed SDK permits
