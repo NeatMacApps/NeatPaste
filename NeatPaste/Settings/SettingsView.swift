@@ -168,7 +168,9 @@ private struct IgnoredApplicationsPane: View {
                     .allowsHitTesting(false)
                 }
             }
-            .frame(height: min(max(CGFloat(preferences.ignoredAppBundleIDs.count) * 36 + 32, 190), 350))
+            .frame(height: preferences.ignoredAppBundleIDs.isEmpty
+                ? 190
+                : min(max(CGFloat(preferences.ignoredAppBundleIDs.count) * 36 + 32, 100), 350))
             HStack {
                 Button(String(localized: "settings.ignoredApps.add"), action: addApplications)
                 Button(String(localized: "settings.ignoredApps.remove"), role: .destructive) {
@@ -221,6 +223,9 @@ private struct IgnoredApplicationRow: View {
 
     var body: some View {
         let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+        let bundle = url.flatMap { Bundle(url: $0) }
+        let name = bundle?.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String
+            ?? bundle?.object(forInfoDictionaryKey: "CFBundleName") as? String
         HStack(spacing: 8) {
             if let url {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: url.path))
@@ -233,7 +238,7 @@ private struct IgnoredApplicationRow: View {
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
             }
-            Text(verbatim: url.map { FileManager.default.displayName(atPath: $0.path) } ?? bundleID)
+            Text(verbatim: name ?? bundleID)
         }
     }
 }
