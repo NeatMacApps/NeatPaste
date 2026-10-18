@@ -1,6 +1,6 @@
 # 历史面板：预览尺寸、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、搜索与玻璃、点选粘贴、滚动条、展开抖动与帧调度
 
-文档定位：历史面板已证伪路径与必须留下的拦法。覆盖系统预览尺寸/换条闪动、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、滚动条、搜索与玻璃、点选粘贴、展开时的上下抖动与逐帧调度。展开抖动在 1.0.17 仍未通过用户实机验收，原因未确认；不要把它当成已修。产品行为以 [PRODUCT_CONTRACT.md](../PRODUCT_CONTRACT.md) 为准。
+文档定位：历史面板已证伪路径与必须留下的拦法。覆盖系统预览尺寸/换条闪动、光标锚点、去重、点外面关闭、图片缩略图、按住方向键、滚动条、搜索与玻璃、点选粘贴、展开时的上下抖动与逐帧调度。1.0.17 的帧率缓解未解决抖动；后续整数点坐标修复已进入本机 1.0.18，安装后的动效验收仍待完成。产品行为以 [PRODUCT_CONTRACT.md](../PRODUCT_CONTRACT.md) 为准。
 
 ## 预览必须是系统预览，且必须一直是小窗
 
@@ -143,12 +143,12 @@ show. Anomaly-only telemetry logs slow motions and dropped vsync ticks; healthy
 motions stay silent.
 
 Thumbnail decode on the main thread (1.0.17) — mitigation, cause not confirmed.
-Status (2026-10-17): 1.0.17 (18) was built and installed locally, and the user
+Earlier status (2026-10-17, before native-coordinate diagnosis): 1.0.17 (18) was built and installed locally, and the user
 still reports vertical judder in NeatEditor. The synchronous decode below was a
 real first-open stall and removing it improved frame pacing, but frame pacing
 improving did not remove the perceived jitter. Do not describe this change as
-the fix and do not close the symptom on telemetry alone; the remaining cause is
-unresolved.
+the fix and do not close the symptom on telemetry alone. The remaining cause
+was unresolved at that point; the later fractional-anchor diagnosis is below.
 
 Geometry telemetry during the
 reported jitter showed zero edge error, zero glass/pin error and no layer
@@ -223,6 +223,21 @@ calls are checked. The test passed 14 consecutive isolated runs after the failur
 
 ### Validation diagnostics
 
+Current verification boundary (2026-10-18): the owner requires virtual displays to
+stay disconnected during normal use; a short idle period is not permission to
+connect one. Do not synthesize panel shortcuts, move windows or change focus as a
+substitute. A bounded, observation-only capture helper can wait for an ordinary
+NeatEditor invocation, record its actual expansion once and exit. If none occurs,
+expiry is missing acceptance evidence, not a product pass. Keep the recorded binary
+identity and the complete capture log with the evidence. Installed 1.0.18 (19)
+includes the motion fix; a new installation/version number alone does not clear it.
+
+The earlier non-exclusive Carbon registration probe returned `noErr`; it did not
+prove NeatPaste's hotkey registration was missing. Apple's installed SDK permits
+multiple non-exclusive registrants. See the shared
+[Carbon diagnostic limit](~/Codes/_standards/workspace-docs/swift-docs/macos-appkit-gotchas.md#carbon-全局快捷键在-swift-6-并发下的桥接).
+No additional hotkey or startup change is justified by that probe.
+
 A production recording on 2026-10-17 captured the installed 1.0.17 (18)
 expanding from NeatEditor on the 2× virtual display. The selected-row top alternated
 between 604 and 606 backing pixels before settling; concurrent WindowServer bounds
@@ -243,7 +258,8 @@ additional evidence, not a substitute. The implementation and 82 non-presenting 
 window quantization regression coverage for fractional anchors in both directions.
 Release compilation passed for arm64 and x86_64, and static analysis passed. The
 existing App Intents metadata warning is retained as assessed below. Visual
-acceptance remains pending; no public release is authorized.
+acceptance remains pending. This motion task has no authorization to publish or
+change the update feed.
 
 Silent layout probe (2026-10-17, installed 1.0.17 (18) unchanged): an independent
 CLI reused the current `PinnedContentHost`, `PanelGlassView` and `PanelSearchField`
