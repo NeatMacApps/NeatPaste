@@ -6,6 +6,27 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatPaste</title>
         <item>
+            <title>1.0.18</title>
+            <pubDate>Sun, 18 Oct 2026 19:13:44 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatPaste</link>
+            <sparkle:version>19</sparkle:version>
+            <sparkle:shortVersionString>1.0.18</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[NeatPaste 1.0.18
+
+- Refine Settings into two native toolbar tabs with aligned grouped controls and a compact app information row.
+- Add working application exclusions: choose apps, remove them, and keep the list across launches. Copies from ignored foreground apps are skipped.
+- Include the current panel motion improvements: a single animation clock, stable fractional caret anchors, and background thumbnail decoding.
+
+简体中文
+
+- 将设置整理为两个原生工具栏页签，使用对齐的分组控件和紧凑的应用信息行。
+- 补齐忽略应用：支持选择、移除并记住名单，跳过这些前台应用复制的内容。
+- 包含当前面板动效改进：统一动画时钟、稳定非整数光标锚点，并在后台解码缩略图。
+]]></description>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.18/NeatPaste-1.0.18.zip" length="4629184" type="application/octet-stream" sparkle:edSignature="ecucQAUgvfq6EZlt4zg+P1JpLRHps7cxG2Y2HW1I0rvZ7fTMMj9Ebg2VygTPXzUI4c9MLqEd+Kst3Zf3gyVjBg=="/>
+        </item>
+        <item>
             <title>1.0.13</title>
             <pubDate>Sat, 17 Oct 2026 17:22:23 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatPaste</link>
@@ -93,18 +114,9 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
 ]]></description>
             <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.4/NeatPaste-1.0.4.zip" length="4508381" type="application/octet-stream" sparkle:edSignature="KESwtCj/CxuuGNnDguGocvc4VBOuEXGBQveqBl3PqVokOI4UXntXx5oI8C6nFTWuudtJaMw0+lXcRe4YeCXkDQ=="/>
         </item>
-        <item>
-            <title>1.0.1</title>
-            <pubDate>Sat, 22 Aug 2026 12:00:24 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatPaste</link>
-            <sparkle:version>2</sparkle:version>
-            <sparkle:shortVersionString>1.0.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.1/NeatPaste-1.0.1.zip" length="4433083" type="application/octet-stream" sparkle:edSignature="nvJFN/FhZ85G7+ZCwj6NzzFLRbhTW6wW629z1Iybk/HJe4w8IRXSZWw1J2FISYgQKg11PZcJ34oZdTuV9+wNCg=="/>
-        </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: /GTzFN79BaWMl4JWZsTfwj2bUtRFjB4zm5dIn47+5TpotqyU2YOVvkpois2Az4YwKZR75z3sWF6ZudZGhGxeCA==
-length: 7503
+edSignature: mWoaEEUW/rCibbWcSiX76I+iKH21yDTW0n4I2DlaobhPHmAFuJQcxEfv8Wew8iUWdO68j1CNqaaxLdfyvZ2ZAg==
+length: 8352
 -->
