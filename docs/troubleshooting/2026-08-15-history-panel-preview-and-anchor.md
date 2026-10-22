@@ -53,7 +53,7 @@
 - **焦点落在本应用时仍当输入位置。** 应丢弃，改走鼠标等后备。
 - **以光标为中心左右对半摆面板。** 左半边会盖住已经打的字，看起来像挡住半行。必须左边界对齐光标；只有贴到屏幕边缘才允许往回夹。
 - **贴着光标中线或短插入条摆，只留很小空隙。** 辅助功能给的光标矩形常常只有一两像素高，会盖住半行。必须按整行高度让开。
-- **用缩放把整窗从很小放到正常。** 玻璃会发糊。进出场必须改真实窗口尺寸，从光标旁一滴玻璃撑到规定大小。
+- **用缩放把整窗从很小放到正常。** 玻璃会发糊。进出场必须改真实窗口尺寸，从光标旁极小点撑到规定大小。
 - **收起动画还没完就发送粘贴。** 面板若仍占着键盘，粘贴会打进自己的搜索框。必须先交出键盘，玻璃再收回去。
 
 ### 正确顺序
@@ -108,6 +108,26 @@ presenting test was run, no shortcut/focus change was synthesized, and no virtua
 display was connected. The build and native geometry checks do not establish absence
 of a compositor flash; inspect a real opening and dismissal after the session is
 available. This acceptance limit does not defer publication or local installation.
+
+Delivery, 1.0.19 (20): source commit `d481c25` was pushed before the Developer ID
+archive/export and overwrite installation. The installed executable matches both
+the exported app and the apps inside the publicly downloaded ZIP and DMG (SHA256
+`59efd25a86c3bd8f6a34ed016d2550d1268495d9d60c9cb9b7934d39ccc9018a`). Both native
+architectures compiled; app/DMG stapled tickets and nested signatures validated.
+Gatekeeper returned accepted with `override=security disabled` on this Mac, so enabled
+policy enforcement on another Mac is not claimed. The public
+[1.0.19 release](https://github.com/NeatMacApps/NeatPaste/releases/tag/v1.0.19) serves
+the two complete assets; anonymous full downloads matched their local SHA256 values.
+The ordinary public update feed serves build 20 and passed Sparkle integrity checking.
+Homebrew's current cask serves 1.0.19 with the matching DMG digest.
+
+The original publisher stopped with exit 128 after its Homebrew SSH clone connection
+closed, after assets and feed were already published. The cask was updated through a
+SHA-checked GitHub Contents API request and read back, without rebuilding or resubmitting
+the accepted artifacts. Retain `logs/publish-1.0.19-point.status.json` as the original
+failure receipt and `build/diagnostics/point-endpoint/release-recovery.json` as the
+independently verified completion. Shared recovery belongs to the
+[distribution guide](~/Codes/_standards/workspace-docs/swift-docs/macos-signing-notarization-distribution.md).
 
 ## Vertical jitter during downward expansion
 
