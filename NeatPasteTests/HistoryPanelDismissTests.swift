@@ -37,7 +37,8 @@ final class HistoryPanelMotionTests: XCTestCase {
             contentRect: .zero, styleMask: [.nonactivatingPanel, .fullSizeContentView],
             backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        window.minSize = NSSize(width: 8, height: 8)
+        let seedLength = PanelAnchor.seedLength
+        window.minSize = NSSize(width: seedLength, height: seedLength)
         window.maxSize = NSSize(width: 10_000, height: 10_000)
         defer { window.close() }
 
@@ -48,8 +49,8 @@ final class HistoryPanelMotionTests: XCTestCase {
                 x: -812 + fraction, y: 611 + fraction, width: 320, height: 432))
             for top in [true, false] {
                 let seed = NSRect(
-                    x: target.minX, y: top ? target.maxY - 36 : target.minY,
-                    width: 36, height: 36)
+                    x: target.minX, y: top ? target.maxY - seedLength : target.minY,
+                    width: seedLength, height: seedLength)
                 for (from, to) in [(seed, target), (target, seed)] {
                     for step in 0...100 {
                         let requested = HistoryPanel.interpolatedMotionFrame(
@@ -78,10 +79,11 @@ final class HistoryPanelMotionTests: XCTestCase {
         let pin = try XCTUnwrap(glass.contentView)
         let hosted = try XCTUnwrap(pin.subviews.first)
         let frame = NSRect(x: 200, y: 200, width: 320, height: 432)
+        let seedLength = PanelAnchor.seedLength
         for top in [true, false] {
             panel.orderOut(nil)
-            let seed = NSRect(x: frame.minX, y: top ? frame.maxY - 36 : frame.minY,
-                              width: 36, height: 36)
+            let seed = NSRect(x: frame.minX, y: top ? frame.maxY - seedLength : frame.minY,
+                              width: seedLength, height: seedLength)
             panel.showPanel(placement: PanelAnchor.Placement(frame: frame, seed: seed, pinsContentToTop: top))
             var heights: [CGFloat] = []
             for sample in 0..<30 {
@@ -109,7 +111,7 @@ final class HistoryPanelMotionTests: XCTestCase {
                     }
                 }
             }
-            XCTAssertTrue(heights.contains { $0 > 36 && $0 < frame.height }, "Must sample an in-flight resize")
+            XCTAssertTrue(heights.contains { $0 > seedLength && $0 < frame.height }, "Must sample an in-flight resize")
             print("Panel motion top=\(top), heights=\(heights)")
         }
     }
@@ -124,7 +126,7 @@ final class HistoryPanelMotionTests: XCTestCase {
 
         hosted.wantsLayer = true
         // Resizing is synchronous; a later layout pass must not repair a stale frame.
-        for height in [36.0, 84.5, 190.0, 320.5, 432.0, 190.0, 36.0] {
+        for height in [1.0, 8.0, 36.0, 84.5, 190.0, 320.5, 432.0, 190.0, 1.0] {
             pin.setFrameSize(NSSize(width: size.width, height: height))
             XCTAssertEqual(hosted.frame.maxY, height, accuracy: 0.001)
             XCTAssertEqual(hosted.frame.size, size)
@@ -134,13 +136,13 @@ final class HistoryPanelMotionTests: XCTestCase {
         // Switching above the caret pins to the bottom immediately, even without resize.
         pin.pinsToTop = false
         XCTAssertEqual(hosted.frame.minY, 0)
-        for height in [84.5, 190.0, 432.0, 36.0] {
+        for height in [84.5, 190.0, 432.0, 1.0] {
             pin.setFrameSize(NSSize(width: size.width, height: height))
             XCTAssertEqual(hosted.frame.minY, 0)
             XCTAssertEqual(hosted.frame.size, size)
         }
         pin.pinsToTop = true
-        XCTAssertEqual(hosted.frame.maxY, 36)
+        XCTAssertEqual(hosted.frame.maxY, 1)
     }
 }
 
@@ -169,7 +171,9 @@ final class HistoryPanelMotionCurveTests: XCTestCase {
         let panel = HistoryPanel(model: model)
         defer { panel.orderOut(nil) }
         let target = NSRect(x: 200, y: 200, width: 320, height: 432)
-        let seed = NSRect(x: target.minX, y: target.maxY - 36, width: 36, height: 36)
+        let seedLength = PanelAnchor.seedLength
+        let seed = NSRect(x: target.minX, y: target.maxY - seedLength,
+                          width: seedLength, height: seedLength)
         panel.showPanel(placement: PanelAnchor.Placement(
             frame: target, seed: seed, pinsContentToTop: true))
 
@@ -183,7 +187,7 @@ final class HistoryPanelMotionCurveTests: XCTestCase {
             heights.append(panel.frame.height)
             RunLoop.main.run(until: Date().addingTimeInterval(0.008))
         }
-        let inFlight = heights.filter { $0 > 36.5 && $0 < target.height - 0.5 }
+        let inFlight = heights.filter { $0 > seedLength + 0.5 && $0 < target.height - 0.5 }
         XCTAssertGreaterThanOrEqual(
             inFlight.count, 12,
             "0.18 s motion must span the planned duration, not finish in ~10 ticks: \(heights)")

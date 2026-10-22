@@ -161,7 +161,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         motionGeneration += 1
         let generation = motionGeneration
         let targetFrame = Self.windowAlignedRect(placement.frame)
-        // Derive the droplet from the snapped target so the shared edges
+        // Derive the point-like seed from the snapped target so the shared edges
         // (left + caret-adjacent) are exactly equal, not just close.
         let seedLength = min(PanelAnchor.seedLength, targetFrame.width, targetFrame.height)
         let targetSeed = NSRect(
@@ -328,7 +328,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     }
 
     private func unlockSizeForMotion() {
-        minSize = NSSize(width: 8, height: 8)
+        minSize = NSSize(width: PanelAnchor.seedLength, height: PanelAnchor.seedLength)
         maxSize = NSSize(width: 10_000, height: 10_000)
     }
 
@@ -979,7 +979,7 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
     }
 }
 
-/// Keeps list content at its real size while the glass window grows from a droplet.
+/// Keeps list content at its real size while the glass window grows from a point.
 final class PinnedContentHost: NSView {
     var pinsToTop = true {
         didSet { positionContent() }

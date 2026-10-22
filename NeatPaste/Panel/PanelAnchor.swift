@@ -22,8 +22,8 @@ enum PanelAnchor {
         var pinsContentToTop: Bool
     }
 
-    /// Small glass droplet at the caret-adjacent corner of the final panel.
-    nonisolated static let seedLength: CGFloat = 36
+    /// Smallest whole-point native window: no recognizable circular endpoint.
+    nonisolated static let seedLength: CGFloat = 1
 
     static func placement(for size: NSSize) -> Placement {
         let preferred = preferredAnchorRect()

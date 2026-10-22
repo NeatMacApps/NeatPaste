@@ -64,6 +64,51 @@
 4. 点菜单栏图标时，系统往往已经丢掉光标，退到鼠标附近是预期；**快捷键唤出**才是贴着输入位置的路径。
 5. 算出锚点后：左边界对齐光标；面板整体放在这一行下面（或上面），不要挡住这一行。
 
+## Conspicuous circular opening and closing endpoints
+
+The 36-point square seed was clipped by the native glass corner radius into a visible
+circle. It was fully opaque before the first display-link resize and remained visible
+at the end of dismissal. The owner's 2026-10-22 correction rejects that identifiable
+circle; visual persistence is not needed to explain why the implementation exposed it.
+
+Use a one-native-point seed and lower the motion-only `NSWindow.minSize` to the same
+size. Lowering the seed alone leaves the previous 8-point minimum able to clamp the
+window. Reuse the anchored real resize, whole-point alignment and full-size content pin;
+keep the existing durations and Reduced Motion fade. Do not substitute a scaled snapshot
+or restore the measured full-duration window/content alpha animation. The current
+requirement and inspected API/reference are in the
+[product contract](../PRODUCT_CONTRACT.md#panel-motion).
+
+Inspect both endpoints in rendered motion, including the first opening frames and the
+last closing frames. Native geometry readback establishes the small endpoint and stable
+edges, but cannot alone establish that the compositor has no visible glass/shadow flash.
+
+Verification for 1.0.19 (2026-10-22): all 84 selected non-presenting tests passed using
+Xcode's native `xctest` runner against the compiled Debug bundle. This includes actual
+native window readback across 101 interpolation positions in both directions at four
+fractional anchors; the one-point endpoint is accepted without changing the fixed edges.
+Release static analysis passed for arm64 and x86_64. The normal `xcodebuild test` launch
+waited without starting its app host in the locked session and was interrupted; the
+same compiled bundle was then run directly with the two presenting tests excluded.
+Logs and the exact selector list remain under `build/diagnostics/point-endpoint/`.
+
+The existing App Intents metadata skip remains assessed in the diagnostics section
+below. The direct XCTest run also emitted AppKit's legacy `NSStringPboardType` UTI
+message while exercising named-pasteboard capture; modern UTF-8 content and capture
+assertions passed. Keep legacy text compatibility rather than removing formats to
+silence that system message; reassess the legacy read when changing the capture layer.
+An isolated `sandbox_extension_consume failed: 1` line followed successful direct-runner
+completion, with all file-provider assertions passing; no application sandbox or
+signing change is justified by that runner-only observation. Reassess if it occurs on
+the installed drag/paste path. No compiler or static-analysis defect was reported.
+
+Rendered motion acceptance remains unavailable: the foreground application was
+`loginwindow`, no NeatPaste panel was visible, and the session was locked. Neither
+presenting test was run, no shortcut/focus change was synthesized, and no virtual
+display was connected. The build and native geometry checks do not establish absence
+of a compositor flash; inspect a real opening and dismissal after the session is
+available. This acceptance limit does not defer publication or local installation.
+
 ## Vertical jitter during downward expansion
 
 The reported symptom is primarily downward expansion with content pinned to the top,

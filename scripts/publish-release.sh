@@ -246,15 +246,13 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- Refine Settings into two native toolbar tabs with aligned grouped controls and a compact app information row.
-- Add working application exclusions: choose apps, remove them, and keep the list across launches. Copies from ignored foreground apps are skipped.
-- Include the current panel motion improvements: a single animation clock, stable fractional caret anchors, and background thumbnail decoding.
+- Open and close the history panel from a point-like endpoint, removing the conspicuous glass circle.
+- Preserve the fast anchored resize, stable caret-adjacent edges, and immediate input handoff when dismissing.
 
 简体中文
 
-- 将设置整理为两个原生工具栏页签，使用对齐的分组控件和紧凑的应用信息行。
-- 补齐忽略应用：支持选择、移除并记住名单，跳过这些前台应用复制的内容。
-- 包含当前面板动效改进：统一动画时钟、稳定非整数光标锚点，并在后台解码缩略图。
+- 历史面板从极小点展开、收回，去掉显眼的玻璃圆形起止态。
+- 保留快速展开、光标旁边缘稳定，以及关闭时立即交还输入的行为。
 EOF
 
 appcast_dir="${work_dir}/appcast"
