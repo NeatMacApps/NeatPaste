@@ -96,6 +96,54 @@ Inspect both endpoints in rendered motion, including the first opening frames an
 last closing frames. Native geometry readback establishes the small endpoint and stable
 edges, but cannot alone establish that the compositor has no visible glass/shadow flash.
 
+Verification for 1.0.20 (21), 2026-10-22: 85 selected non-presenting Debug tests and
+arm64/x86_64 Release analysis/archive/export passed. The new regression samples the
+actual easing and size interpolation at 60 and 120 Hz and rejects visible circular
+intermediate frames; the presenting test additionally checks initial window alpha,
+parent-only fading and the visible-size thresholds. Presenting XCTest cases were
+not used as evidence while the session remained locked. The expected App Intents
+metadata diagnostic and direct-runner legacy UTI/sandbox messages retain the scoped
+assessments recorded below; no new application compiler/static-analysis warning
+was reported. The diagnostic frame-stream helper's temporary `CGColor` lifetime
+warning was corrected by retaining its assigned color through stream completion;
+its final compilation was clean.
+
+Owner-authorized virtual-display acceptance was attempted. Background startup,
+a bounded wake and one retry after a successful identity query connected Agent Display;
+native readback confirmed it active/awake with the session still locked. The newly
+installed real panel was opened through the menu-bar button's native AXPress action.
+Its 640 × 864 raw window image was inspected. Two independent four-second window
+traces contained 359 samples, including 24 on-screen small-size samples at alpha zero,
+184 large-size samples at alpha one and intermediate fade values; none violated the
+mapping. WindowServer clamped the tiniest surface to 10 × 10 points on this setup,
+which further confirms that the one-point request alone was insufficient. The new
+opacity rule covers that native minimum too. Actual installed/exported executable
+SHA256: `63b0bd4f346d2bdc67d484f7964fee98a3046c55152be524a0cfc48b7c970dd1`.
+
+Capture limits remain explicit: both ScreenCaptureKit movie attempts produced no movie;
+the desktop attempt reported failure to process the first sample buffer (ReplayKit
+-5822). A display filter including only the panel returned no complete stream frames.
+Fourteen helper snapshots yielded full-panel and
+20 × 20 raw endpoint images, but their measured capture intervals were roughly
+0.8–2.2 seconds and missed most of the short transition. Isolated screenshots omitted
+the window-level alpha: the raw circle remained capturable while its WindowServer
+alpha was zero. These images establish fresh window surfaces, not a visible desktop
+circle or a compositor smoothness pass. No synthetic compositing is counted as real
+evidence. The full desktop stayed black under lock. The generic capture procedure
+and these evidence distinctions are maintained in the shared
+[Mac capture guide](~/.config/agentsync/docs/MAC_KNOWLEDGE_BASE.md#closed-lid-screen-capture-2026-10-17)
+and screenshot skill; do not require repeated unlock approval before trying them.
+
+Both the signed application and DMG were notarized and stapled. The complete public
+[1.0.20 assets](https://github.com/NeatMacApps/NeatPaste/releases/tag/v1.0.20) downloaded
+anonymously and matched local bytes. The public feed and Homebrew cask serve build 21 /
+version 1.0.20. Source commit `a04f6e5` was pushed before building and installation;
+the publisher finished with exit zero. All captures contain private history and remain
+local under `build/diagnostics/endpoint-fade/`. Agent Display was disconnected and
+native enumeration afterward contained only the physical display; no recording or
+observation process remains. Desktop-composited appearance and smoothness acceptance
+remain unavailable on this locked session, rather than being declared passed.
+
 Verification for 1.0.19 (2026-10-22): all 84 selected non-presenting tests passed using
 Xcode's native `xctest` runner against the compiled Debug bundle. This includes actual
 native window readback across 101 interpolation positions in both directions at four
