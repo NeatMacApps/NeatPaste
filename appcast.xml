@@ -6,6 +6,15 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
     <channel>
         <title>NeatPaste</title>
         <item>
+            <title>1.0.19</title>
+            <pubDate>Thu, 22 Oct 2026 18:30:45 +0800</pubDate>
+            <link>https://github.com/NeatMacApps/NeatPaste</link>
+            <sparkle:version>20</sparkle:version>
+            <sparkle:shortVersionString>1.0.19</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.19/NeatPaste-1.0.19.zip" length="4629174" type="application/octet-stream" sparkle:edSignature="cdWzkagfb3y6ybWCztyJYjhOqlyv88QB6CMdADSWMbUoPYnmDBHQKuSaPNr+3uO7SOkQxMv00BEWYAznt/QlBw=="/>
+        </item>
+        <item>
             <title>1.0.18</title>
             <pubDate>Sun, 18 Oct 2026 19:13:44 +0800</pubDate>
             <link>https://github.com/NeatMacApps/NeatPaste</link>
@@ -98,25 +107,9 @@ IMPORTANT: This file was signed by Sparkle. Any modifications to this file requi
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
             <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.5/NeatPaste-1.0.5.zip" length="4572904" type="application/octet-stream" sparkle:edSignature="Q295VkKmiOQP9lCu/1sAUpQXU4Hso0DWADULjFjiTljINZ6RnmfAFTXm/A0wuAm5XEEX39SKjjZ95h4bkeZbBg=="/>
         </item>
-        <item>
-            <title>1.0.4</title>
-            <pubDate>Tue, 01 Sep 2026 22:20:30 +0800</pubDate>
-            <link>https://github.com/NeatMacApps/NeatPaste</link>
-            <sparkle:version>5</sparkle:version>
-            <sparkle:shortVersionString>1.0.4</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[NeatPaste 1.0.4
-
-- Launch at login (pending approval is not shown as on)
-- Hide menu bar icon; recovery window to restore it (history panel is not the recovery surface)
-- Check for Updates in the menu
-- Clicking outside the history panel dismisses it
-]]></description>
-            <enclosure url="https://github.com/NeatMacApps/NeatPaste/releases/download/v1.0.4/NeatPaste-1.0.4.zip" length="4508381" type="application/octet-stream" sparkle:edSignature="KESwtCj/CxuuGNnDguGocvc4VBOuEXGBQveqBl3PqVokOI4UXntXx5oI8C6nFTWuudtJaMw0+lXcRe4YeCXkDQ=="/>
-        </item>
     </channel>
 </rss>
 <!-- sparkle-signatures:
-edSignature: mWoaEEUW/rCibbWcSiX76I+iKH21yDTW0n4I2DlaobhPHmAFuJQcxEfv8Wew8iUWdO68j1CNqaaxLdfyvZ2ZAg==
-length: 8352
+edSignature: CVD4czi3TgyiiUL5zfwaSqEQJGJxG8SHtN06PatMrVMgMJjN7mTLx1vTI8sef3VG5MFvLahMMKfDoRUAbF48Cg==
+length: 8028
 -->
