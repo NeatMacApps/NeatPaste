@@ -85,10 +85,15 @@ final class HistoryPanelMotionTests: XCTestCase {
             let seed = NSRect(x: frame.minX, y: top ? frame.maxY - seedLength : frame.minY,
                               width: seedLength, height: seedLength)
             panel.showPanel(placement: PanelAnchor.Placement(frame: frame, seed: seed, pinsContentToTop: top))
+            XCTAssertEqual(panel.alphaValue, 0, "The first ordered-in endpoint must be invisible")
+            XCTAssertEqual(hosted.alphaValue, 1, "Fade the window once, not its content again")
             var heights: [CGFloat] = []
             for sample in 0..<30 {
                 try await Task.sleep(for: .milliseconds(8))
                 heights.append(panel.frame.height)
+                let shortSide = min(panel.frame.width, panel.frame.height)
+                if shortSide <= 60 { XCTAssertEqual(panel.alphaValue, 0) }
+                if shortSide >= 120 { XCTAssertEqual(panel.alphaValue, 1) }
                 let content = panel.convertToScreen(hosted.convert(hosted.bounds, to: nil))
                 let edge = top ? frame.maxY : frame.minY
                 XCTAssertEqual(top ? panel.frame.maxY : panel.frame.minY, edge, accuracy: 0.5)
@@ -147,6 +152,35 @@ final class HistoryPanelMotionTests: XCTestCase {
 }
 
 final class HistoryPanelMotionCurveTests: XCTestCase {
+    @MainActor
+    func testCircularIntermediateFramesStayInvisibleAtDifferentRefreshRates() {
+        let target = NSRect(x: 200, y: 200, width: 320, height: 432)
+        let seed = NSRect(x: target.minX, y: target.maxY - 1, width: 1, height: 1)
+        for refreshRate in [60.0, 120.0] {
+            for (from, to, duration, curve) in [
+                (seed, target, PanelMotion.appearDuration, PanelMotion.appearControlPoints),
+                (target, seed, PanelMotion.dismissDuration, PanelMotion.dismissControlPoints)
+            ] {
+                let count = Int(ceil(duration * refreshRate))
+                var opaqueFrames = 0
+                for tick in 0...count {
+                    let linear = min(Double(tick) / refreshRate / duration, 1)
+                    let progress = HistoryPanel.easedProgress(
+                        linear, c1x: curve.x1, c1y: curve.y1, c2x: curve.x2, c2y: curve.y2)
+                    let frame = HistoryPanel.interpolatedMotionFrame(
+                        from: from, to: to, pinsToTop: true, progress: progress)
+                    let alpha = PanelMotion.opacity(for: frame.size)
+                    XCTAssertTrue((0...1).contains(alpha))
+                    if min(frame.width, frame.height) <= AppPreferences.panelCornerRadius * 2 {
+                        XCTAssertEqual(alpha, 0, "A circular intermediate shape must never be visible")
+                    }
+                    if alpha == 1 { opaqueFrames += 1 }
+                }
+                XCTAssertGreaterThan(opaqueFrames, count / 2, "Opacity must not hide most of the transition")
+            }
+        }
+    }
+
     @MainActor
     func testAppearCurveNeverFrontLoadsIntoTeleport() {
         let c = PanelMotion.appearControlPoints

@@ -71,11 +71,24 @@ circle. It was fully opaque before the first display-link resize and remained vi
 at the end of dismissal. The owner's 2026-10-22 correction rejects that identifiable
 circle; visual persistence is not needed to explain why the implementation exposed it.
 
-Use a one-native-point seed and lower the motion-only `NSWindow.minSize` to the same
-size. Lowering the seed alone leaves the previous 8-point minimum able to clamp the
-window. Reuse the anchored real resize, whole-point alignment and full-size content pin;
-keep the existing durations and Reduced Motion fade. Do not substitute a scaled snapshot
-or restore the measured full-duration window/content alpha animation. The current
+The one-native-point seed in 1.0.19 did not solve the owner's live symptom. The
+fixed 20-point corner radius still made intermediate frames circular or capsule-like,
+and those frames were fully opaque. Ideal sampling of the existing curve already
+includes these shapes at 60 and 120 Hz; dropped frames are not required to explain
+their visibility. No production recording yet attributes additional dwell to dropped
+frames. Lowering `NSWindow.minSize` remains necessary for the one-point endpoint, but
+does not remove the intermediate phase.
+
+The current remedy keeps the window at alpha zero through a shortest side of 60
+points, then uses a smooth window-only fade to alpha one at 120 points. The same
+size-based mapping handles closing and interruption without a new opacity clock.
+Hosted content remains opaque; ordinary larger frames remain at alpha one. Order
+out before restoring opacity or minimum-size constraints at dismissal completion,
+otherwise the cleanup itself can expose a bright endpoint for one compositor frame.
+Reuse the anchored real resize, whole-point alignment and full-size content pin;
+keep the existing durations and Reduced Motion fade. This narrowly supersedes the
+older ban on all normal-path opacity changes; it does not restore the measured
+full-duration window/content fade or the rejected late content reveal. The current
 requirement and inspected API/reference are in the
 [product contract](../PRODUCT_CONTRACT.md#panel-motion).
 

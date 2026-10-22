@@ -182,7 +182,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
             if PanelMotion.prefersReducedMotion {
                 applyMotionFrame(targetFrame)
                 // Reduced motion keeps a short fade; the stepper itself does not.
-                hostingView?.alphaValue = 0
                 alphaValue = 0
             } else {
                 applyMotionFrame(startFrame)
@@ -204,7 +203,6 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
                 context.timingFunction = CAMediaTimingFunction(name: .easeOut)
                 context.allowsImplicitAnimation = false
                 animator().alphaValue = 1
-                hostingView?.animator().alphaValue = 1
             } completionHandler: { [weak self] in
                 self?.performOnMain {
                     guard let self, generation == self.motionGeneration else { return }
@@ -344,12 +342,14 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
 
     private func finishHide() {
         cancelMotionTask()
+        // Restoring opacity/constraints while still ordered in can flash the
+        // small endpoint (or a resized window) for one compositor frame.
+        orderOut(nil)
         hostingView?.alphaValue = 1
         alphaValue = 1
         minSize = AppPreferences.panelSize
         maxSize = AppPreferences.panelSize
         ignoresMouseEvents = false
-        orderOut(nil)
         isDismissing = false
     }
 
@@ -460,12 +460,13 @@ final class HistoryPanel: NSPanel, QLPreviewPanelDataSource, QLPreviewPanelDeleg
         CATransaction.setDisableActions(true)
         NSAnimationContext.beginGrouping()
         NSAnimationContext.current.allowsImplicitAnimation = false
-        // Geometry only. Redraw in the normal display cycle: forcing
+        // Redraw in the normal display cycle: forcing
         // displayIfNeeded on every 120 Hz tick made the glass re-render on
         // the main thread and caused 16–51 ms gaps between vsyncs.
+        let opacity = PanelMotion.opacity(for: frame.size)
+        if alphaValue != opacity { alphaValue = opacity }
         setFrame(frame, display: false)
-        alphaValue = 1
-        hostingView?.alphaValue = 1
+        if hostingView?.alphaValue != 1 { hostingView?.alphaValue = 1 }
         NSAnimationContext.endGrouping()
         CATransaction.commit()
     }

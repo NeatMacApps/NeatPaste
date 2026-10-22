@@ -246,13 +246,13 @@ release_notes_file="${work_dir}/release-notes.md"
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
-- Open and close the history panel from a point-like endpoint, removing the conspicuous glass circle.
-- Preserve the fast anchored resize, stable caret-adjacent edges, and immediate input handoff when dismissing.
+- Keep the history panel invisible throughout its tiny rounded phase, then briefly fade it into the anchored expansion.
+- Fade out before the panel becomes a small circle and hide it before restoring opacity, preventing a closing flash.
 
 简体中文
 
-- 历史面板从极小点展开、收回，去掉显眼的玻璃圆形起止态。
-- 保留快速展开、光标旁边缘稳定，以及关闭时立即交还输入的行为。
+- 历史面板在微小圆形阶段保持透明，再短暂淡入光标旁的展开动画。
+- 收回到小圆前先淡出，隐藏窗口后才恢复透明度，避免关闭时闪现。
 EOF
 
 appcast_dir="${work_dir}/appcast"

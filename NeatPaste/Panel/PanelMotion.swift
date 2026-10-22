@@ -3,15 +3,23 @@ import QuartzCore
 
 /// Fast, no-bounce motion for a frequently used overlay.
 /// The stepper resizes the real window (never a scale transform) and keeps the
-/// caret-adjacent edges pinned. Opacity is not animated per frame: the panel
-/// stays fully opaque so the glass and its shadow are not recomposited every
-/// tick. Keep dismiss shorter than appear.
+/// caret-adjacent edges pinned. Only the small-shape phase fades the window;
+/// the rest stays opaque to avoid full-duration glass recomposition. Keep
+/// dismiss shorter than appear.
 enum PanelMotion: Sendable {
     /// Perceptual duration: frequent shortcut, settle before it feels like a wait.
     nonisolated static let appearDuration: TimeInterval = 0.18
     /// Exit can be shorter than enter; get out of the way.
     nonisolated static let dismissDuration: TimeInterval = 0.12
     nonisolated static let reducedDuration: TimeInterval = 0.08
+
+    /// Hide every small rounded shape, not just the one-point endpoint. Only
+    /// the window fades; fading its hosted content too would square opacity.
+    nonisolated static func opacity(for size: NSSize) -> CGFloat {
+        let hiddenSide = AppPreferences.panelCornerRadius * 3
+        let progress = min(max((min(size.width, size.height) - hiddenSide) / hiddenSide, 0), 1)
+        return progress * progress * (3 - 2 * progress)
+    }
 
     /// Cubic-bezier control points shared by the animator timing functions
     /// and the manual anchored stepper (which must use the same easing without
