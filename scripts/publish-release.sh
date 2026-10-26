@@ -243,6 +243,10 @@ xcrun stapler staple "/Applications/${APP_NAME}.app" || die "本机应用装订�
 # ---------- 4. 生成 Sparkle 更新包与清单 ----------
 log_step "生成 Sparkle 签名更新包与 appcast"
 release_notes_file="${work_dir}/release-notes.md"
+if [[ -n "${RELEASE_NOTES_FILE:-}" && -f "${RELEASE_NOTES_FILE}" ]]; then
+  # Release train: notes prepared from CHANGELOG.md (English first, then Simplified Chinese).
+  cp "${RELEASE_NOTES_FILE}" "${release_notes_file}"
+else
 cat > "${release_notes_file}" <<EOF
 NeatPaste ${version}
 
@@ -254,6 +258,7 @@ NeatPaste ${version}
 - 历史面板在微小圆形阶段保持透明，再短暂淡入光标旁的展开动画。
 - 收回到小圆前先淡出，隐藏窗口后才恢复透明度，避免关闭时闪现。
 EOF
+fi
 
 appcast_dir="${work_dir}/appcast"
 mkdir -p "${appcast_dir}"
