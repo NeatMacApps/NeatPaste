@@ -126,6 +126,8 @@ xcodebuild -project NeatPaste.xcodeproj -scheme NeatPaste -configuration Debug \
 
 运行 `test` 会真实出示历史面板（窗口动画测试），可能反复抢焦点；用户正在用电脑时不要跑整套测试，先问或只跑非窗口用例。`HistoryPanelMotionTests` 偶发整段只采样到 36pt 初始高度并报 “Must sample an in-flight resize”：先查测试宿主是否失 key 触发 `resignKey()` → `hidePanel()` 取消了展开动画，不要先当成产品回归。
 
+Release gate (owner, 2026-10-17, after repeated releases shipped a panel-jitter defect the owner could still reproduce): 「没有我的许可禁止再发版」. Build, test and overwrite-install locally as needed, but do not run `scripts/publish-release.sh`, push version tags, create GitHub Releases, or update the appcast or Homebrew until the owner explicitly asks; report local verification separately from release state. Open conflict: the global rule still allows a release for a severe published defect without asking; until the owner decides, ask first for NeatPaste.
+
 对外发版（签名公证 dmg + Sparkle 更新包 + GitHub Release + appcast，一条命令、可重复执行；`--local-only` 只产本地公证包不碰远端）：
 
 ```bash
