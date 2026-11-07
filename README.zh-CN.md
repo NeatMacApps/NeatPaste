@@ -70,6 +70,16 @@ open /Applications/NeatPaste.app
 
 钉住、收藏、云同步、AI、其它平台、商店版，以及把富内容降成纯文本。
 
+## 关联工具
+
+| 工具 | 简介 |
+|---|---|
+| [NeatWebApp](https://github.com/NeatMacApps/NeatWebApp) | 从刘海启动网站应用，用悬浮活动 Dock 收起窗口。 |
+| [NeatEditor](https://github.com/NeatMacApps/NeatEditor) | 启动迅速、专注写作的原生纯文本编辑器。 |
+| [HandySwitch](https://github.com/x0c/HandySwitch) | 常用 macOS 菜单栏开关。 |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | 查看并结束高 CPU 占用进程。 |
+| [Corral](https://github.com/corral-dev/corral-apple) | 在原生 Mac 与 iPhone 客户端继续编程 Agent 会话。 |
+
 ## 许可证
 
 [MIT](LICENSE)
