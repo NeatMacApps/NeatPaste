@@ -70,6 +70,16 @@ Then click the menu bar icon or press **⌘⌥V**.
 
 Pinning, favorites, cloud sync, AI, other platforms, an App Store build, or downgrading rich content to plain text.
 
+## Related Tools
+
+| Tool | Description |
+|---|---|
+| [NeatWebApp](https://github.com/NeatMacApps/NeatWebApp) | Focused website apps with a notch launcher and edge-tucking activity Dock. |
+| [NeatEditor](https://github.com/NeatMacApps/NeatEditor) | A fast, distraction-free native plain-text editor. |
+| [HandySwitch](https://github.com/x0c/HandySwitch) | Everyday macOS menu-bar toggles. |
+| [MacResourceMonitor](https://github.com/x0c/MacResourceMonitor) | Find and end CPU-hungry processes. |
+| [Corral](https://github.com/corral-dev/corral-apple) | Native Mac and iPhone clients for coding-agent sessions. |
+
 ## License
 
 [MIT](LICENSE)
